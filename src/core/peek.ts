@@ -53,6 +53,10 @@ function latch(count: number, then: () => void): () => void {
 	};
 }
 
+function blockContextMenu(e: Event): void {
+	e.preventDefault();
+}
+
 export class Peek {
 	phase: Phase = "closed";
 	private options: PeekOptions;
@@ -60,6 +64,8 @@ export class Peek {
 	private stage: Stage | null = null;
 	private fadeTimer = 0;
 	private pointerId = 0;
+	private pointerType = "";
+	private selection: { standard: string; webkit: string } | null = null;
 	private dragging = false;
 	private hot: HTMLElement | null = null;
 	private strayTimer = 0;
@@ -74,6 +80,11 @@ export class Peek {
 		});
 		this.press = new Press({
 			onFire: () => {
+				if (this.isSelectingText()) {
+					this.unlisten();
+					this.squeeze.set(1);
+					return;
+				}
 				this.show();
 				if (this.phase === "closed") this.unlisten();
 				else this.dragging = true;
@@ -94,6 +105,8 @@ export class Peek {
 		el.addEventListener("pointerdown", this.onPointerDown);
 		// Has to exist before the touch starts or iOS won't let it stop a pan.
 		el.addEventListener("touchmove", this.onTouchMove, { passive: false });
+		el.addEventListener("contextmenu", this.onContextMenu);
+		el.style.setProperty("-webkit-touch-callout", "none");
 	}
 
 	/** Puts everything back, even if the menu is up. */
@@ -152,7 +165,9 @@ export class Peek {
 			opacity: "0",
 		});
 		overlay.addEventListener("pointerdown", this.onOverlayDown);
+		overlay.addEventListener("contextmenu", blockContextMenu);
 		menu.addEventListener("click", this.onMenuClick);
+		menu.addEventListener("contextmenu", blockContextMenu);
 
 		const clone = cloneTrigger(trigger);
 		clone.dataset.emerseLifted = "";
@@ -229,6 +244,7 @@ export class Peek {
 		stage.overlay.remove();
 		stage.clone.remove();
 		stage.menu.removeEventListener("click", this.onMenuClick);
+		stage.menu.removeEventListener("contextmenu", blockContextMenu);
 		const { style } = stage.menu;
 		for (const prop of [
 			"position",
@@ -287,6 +303,8 @@ export class Peek {
 	private detach(): void {
 		this.el?.removeEventListener("pointerdown", this.onPointerDown);
 		this.el?.removeEventListener("touchmove", this.onTouchMove);
+		this.el?.removeEventListener("contextmenu", this.onContextMenu);
+		this.el?.style.removeProperty("-webkit-touch-callout");
 		this.el = null;
 		this.disarmStrayClick();
 	}
@@ -307,11 +325,13 @@ export class Peek {
 	}
 
 	private onPointerDown = (e: PointerEvent): void => {
-		if (e.button !== 0 || this.phase === "opening" || this.phase === "open") {
-			return;
-		}
+		// Ctrl+click is a right click on a Mac, and contextmenu handles those.
+		if (e.button !== 0 || e.ctrlKey) return;
+		if (this.phase === "opening" || this.phase === "open") return;
 		if (!this.press.down(e.pointerId, e.clientX, e.clientY)) return;
 		this.pointerId = e.pointerId;
+		this.pointerType = e.pointerType;
+		if (e.pointerType !== "mouse") this.holdSelection();
 		this.squeeze.set(PRESSED_SCALE);
 		this.listen();
 	};
@@ -348,6 +368,57 @@ export class Peek {
 	private onTouchMove = (e: TouchEvent): void => {
 		if (this.dragging && e.cancelable) e.preventDefault();
 	};
+
+	private onContextMenu = (e: Event): void => {
+		e.preventDefault();
+		// Android sends this for a long press too, sometimes just after ours fired.
+		if (this.phase === "opening" || this.phase === "open") return;
+		if (this.press.active && this.pointerType !== "mouse") {
+			this.press.fire();
+			return;
+		}
+		this.press.cancel();
+		this.show();
+	};
+
+	private onSelectStart = (e: Event): void => {
+		// A mouse that wanders past the tolerance is selecting text on purpose.
+		if (this.dragging || this.pointerType !== "mouse") e.preventDefault();
+	};
+
+	private onDragStart = (e: Event): void => {
+		e.preventDefault();
+	};
+
+	/** Stops a held finger turning into the browser's own text selection. */
+	private holdSelection(): void {
+		const { el } = this;
+		if (!el || this.selection) return;
+		const { style } = el;
+		this.selection = {
+			standard: style.getPropertyValue("user-select"),
+			webkit: style.getPropertyValue("-webkit-user-select"),
+		};
+		style.setProperty("user-select", "none");
+		style.setProperty("-webkit-user-select", "none");
+	}
+
+	private releaseSelection(): void {
+		if (!this.selection) return;
+		this.el?.style.setProperty("user-select", this.selection.standard);
+		this.el?.style.setProperty("-webkit-user-select", this.selection.webkit);
+		this.selection = null;
+	}
+
+	private isSelectingText(): boolean {
+		if (this.pointerType !== "mouse") return false;
+		const selection = getSelection();
+		return (
+			!!selection &&
+			!selection.isCollapsed &&
+			!!this.el?.contains(selection.anchorNode)
+		);
+	}
 
 	/** Scrolling under a resting finger never moves the pointer. */
 	private onScroll = (e: Event): void => {
@@ -398,6 +469,8 @@ export class Peek {
 		addEventListener("pointerup", this.onPointerEnd);
 		addEventListener("pointercancel", this.onPointerEnd);
 		addEventListener("scroll", this.onScroll, true);
+		document.addEventListener("selectstart", this.onSelectStart);
+		document.addEventListener("dragstart", this.onDragStart);
 	}
 
 	private unlisten(): void {
@@ -405,5 +478,8 @@ export class Peek {
 		removeEventListener("pointerup", this.onPointerEnd);
 		removeEventListener("pointercancel", this.onPointerEnd);
 		removeEventListener("scroll", this.onScroll, true);
+		document.removeEventListener("selectstart", this.onSelectStart);
+		document.removeEventListener("dragstart", this.onDragStart);
+		this.releaseSelection();
 	}
 }

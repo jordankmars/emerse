@@ -351,3 +351,115 @@ describe("telling a long press from other gestures", () => {
 		expect(onClick).not.toHaveBeenCalled();
 	});
 });
+
+describe("text selection", () => {
+	const selectStart = () => {
+		const e = new Event("selectstart", { bubbles: true, cancelable: true });
+		document.body.dispatchEvent(e);
+		return e;
+	};
+
+	it("turns selection off during a touch press and back on after", () => {
+		const { trigger } = setup();
+		pointer("pointerdown", trigger, { pointerType: "touch" });
+		expect(trigger.style.getPropertyValue("-webkit-user-select")).toBe("none");
+		expect(selectStart().defaultPrevented).toBe(true);
+		pointer("pointerup", trigger);
+		expect(trigger.style.getPropertyValue("-webkit-user-select")).toBe("");
+	});
+
+	it("leaves a mouse free to select text", () => {
+		const { trigger } = setup();
+		pointer("pointerdown", trigger, { pointerType: "mouse" });
+		expect(trigger.style.getPropertyValue("user-select")).toBe("");
+		expect(selectStart().defaultPrevented).toBe(false);
+	});
+
+	it("blocks selection once a drag has started", () => {
+		const { trigger } = setup();
+		pointer("pointerdown", trigger, { pointerType: "mouse" });
+		vi.advanceTimersByTime(450);
+		expect(selectStart().defaultPrevented).toBe(true);
+	});
+
+	it("doesn't open over text the mouse has started selecting", () => {
+		const { trigger } = setup();
+		pointer("pointerdown", trigger, { pointerType: "mouse" });
+		getSelection()?.selectAllChildren(trigger);
+		vi.advanceTimersByTime(450);
+		expect(peek.phase).toBe("closed");
+		getSelection()?.removeAllRanges();
+	});
+
+	it("stops a native drag from cancelling the press", () => {
+		const { trigger } = setup();
+		pointer("pointerdown", trigger);
+		const e = new Event("dragstart", { bubbles: true, cancelable: true });
+		trigger.dispatchEvent(e);
+		expect(e.defaultPrevented).toBe(true);
+	});
+});
+
+describe("context menu", () => {
+	const contextMenu = (target: EventTarget) => {
+		const e = new MouseEvent("contextmenu", {
+			bubbles: true,
+			cancelable: true,
+		});
+		target.dispatchEvent(e);
+		return e;
+	};
+	const touchMove = (target: Element) => {
+		const e = new Event("touchmove", { bubbles: true, cancelable: true });
+		target.dispatchEvent(e);
+		return e;
+	};
+
+	it("suppresses the callout on the trigger", () => {
+		// jsdom drops this property, so check that it was asked for.
+		const set = vi.spyOn(CSSStyleDeclaration.prototype, "setProperty");
+		setup();
+		expect(set).toHaveBeenCalledWith("-webkit-touch-callout", "none");
+		set.mockRestore();
+	});
+
+	it("opens on right click without starting a drag", () => {
+		const { trigger } = setup();
+		expect(contextMenu(trigger).defaultPrevented).toBe(true);
+		expect(peek.phase).toBe("open");
+		expect(touchMove(trigger).defaultPrevented).toBe(false);
+	});
+
+	it("leaves ctrl+click to the context menu", () => {
+		const { trigger } = setup();
+		pointer("pointerdown", trigger, { ctrlKey: true });
+		vi.advanceTimersByTime(450);
+		expect(peek.phase).toBe("closed");
+	});
+
+	it("treats Android's early long press as the press firing", () => {
+		const { trigger } = setup();
+		pointer("pointerdown", trigger, { pointerType: "touch" });
+		vi.advanceTimersByTime(400);
+		contextMenu(trigger);
+		expect(peek.phase).toBe("open");
+		expect(touchMove(trigger).defaultPrevented).toBe(true);
+	});
+
+	it("keeps the drag alive when Android's arrives after ours", () => {
+		const { trigger, items } = setup();
+		pointer("pointerdown", trigger, { pointerType: "touch" });
+		vi.advanceTimersByTime(450);
+		expect(contextMenu(trigger).defaultPrevented).toBe(true);
+		document.elementFromPoint = () => items[0];
+		pointer("pointermove", window);
+		expect(items[0].hasAttribute("data-highlighted")).toBe(true);
+	});
+
+	it("blocks the browser's menu on the overlay and our menu", () => {
+		const { trigger, menu } = setup();
+		hold(trigger);
+		expect(contextMenu(overlay() as HTMLElement).defaultPrevented).toBe(true);
+		expect(contextMenu(menu).defaultPrevented).toBe(true);
+	});
+});
