@@ -351,6 +351,47 @@ describe("Item", () => {
 		expect(link.hasAttribute("disabled")).toBe(false);
 	});
 
+	it("stops a disabled asChild link navigating", () => {
+		render(
+			<Root>
+				<Trigger>Message</Trigger>
+				<Menu>
+					<Item asChild disabled>
+						<a href="#x">Open thread</a>
+					</Item>
+				</Menu>
+			</Root>,
+		);
+		rightClick();
+		const click = new MouseEvent("click", { bubbles: true, cancelable: true });
+		act(() => {
+			items()[0].dispatchEvent(click);
+		});
+		expect(click.defaultPrevented).toBe(true);
+		expect(menu()).not.toBeNull();
+	});
+
+	it("leaves an enabled asChild link alone", () => {
+		const onClick = vi.fn();
+		render(
+			<Root>
+				<Trigger>Message</Trigger>
+				<Menu>
+					<Item asChild onClick={onClick}>
+						<a href="#x">Open thread</a>
+					</Item>
+				</Menu>
+			</Root>,
+		);
+		rightClick();
+		const click = new MouseEvent("click", { bubbles: true, cancelable: true });
+		act(() => {
+			items()[0].dispatchEvent(click);
+		});
+		expect(click.defaultPrevented).toBe(false);
+		expect(onClick).toHaveBeenCalledOnce();
+	});
+
 	it("can remove its own Root", () => {
 		render(<Thread />);
 		rightClick();

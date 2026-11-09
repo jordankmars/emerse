@@ -1,6 +1,7 @@
 import {
 	type ButtonHTMLAttributes,
 	forwardRef,
+	type MouseEvent,
 	type Ref,
 	useCallback,
 	useEffect,
@@ -15,6 +16,11 @@ export interface ItemProps
 	asChild?: boolean;
 	/** The item was picked, by drag, tap or keyboard. */
 	onSelect?: () => void;
+}
+
+/** aria-disabled doesn't stop a link the way disabled stops a button. */
+function blockClick(e: MouseEvent): void {
+	e.preventDefault();
 }
 
 export const Item = forwardRef<HTMLButtonElement, ItemProps>(function Item(
@@ -46,6 +52,7 @@ export const Item = forwardRef<HTMLButtonElement, ItemProps>(function Item(
 				ref={ref as Ref<HTMLElement>}
 				aria-disabled={disabled ? true : undefined}
 				{...(shared as object)}
+				onClick={disabled ? blockClick : props.onClick}
 			/>
 		);
 	}
