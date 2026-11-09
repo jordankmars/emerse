@@ -1,6 +1,8 @@
 import { StrictMode, useEffect, useRef, useState } from "react";
+import { createPortal, flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { Motion } from "../src/core/motion";
+import { Peek } from "../src/core/peek";
 import { Press } from "../src/core/press";
 
 // Everything the playground does lives in this file on purpose: it talks to the
@@ -51,8 +53,15 @@ h1, h2, p { margin: 0; }
 .stage { position: relative; min-height: 240px; background: var(--stage); border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 16px; }
 .note { font-size: 12px; color: var(--muted); text-align: center; }
 .column { display: grid; gap: 12px; justify-items: center; }
-.bubble { max-width: 78%; padding: 8px 13px; border-radius: 18px; background: var(--surface); text-align: left; cursor: default; }
-.bubble.me { background: var(--accent); color: #fff; }
+.chat { width: min(100%, 320px); display: flex; flex-direction: column; gap: 8px; }
+.bubble { max-width: 78%; padding: 8px 13px; border-radius: 18px; background: var(--surface); align-self: flex-start; text-align: left; cursor: default; }
+.bubble.me { align-self: flex-end; background: var(--accent); color: #fff; }
+[data-emerse-overlay] { z-index: 60; background: var(--scrim); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+[data-emerse-lifted] { z-index: 61; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18); }
+.pmenu { z-index: 62; width: 210px; background: var(--surface); border-radius: 14px; padding: 5px; display: grid; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2), 0 0 0 1px var(--line); }
+.pmenu button { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; border-radius: 9px; text-align: left; cursor: default; }
+.pmenu button span { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.pmenu button[data-highlighted], .pmenu button:hover { background: var(--stage); }
 `;
 
 // The recogniser on its own, before anything opens: shrink while held, then say
@@ -118,11 +127,76 @@ function PressDemo() {
 	);
 }
 
+const ITEMS = [
+	["Reply", "↩"],
+	["Copy", "⌘C"],
+	["Pin", "P"],
+	["Forward", "→"],
+];
+
+function Bubble({ text, me = false }: { text: string; me?: boolean }) {
+	const trigger = useRef<HTMLButtonElement>(null);
+	const menu = useRef<HTMLDivElement>(null);
+	const [open, setOpen] = useState(false);
+
+	useEffect(() => {
+		const peek = new Peek({
+			trigger: () => trigger.current,
+			menu: () => menu.current,
+			commit: (next) => flushSync(() => setOpen(next)),
+			align: me ? "end" : "start",
+		});
+		peek.attach();
+		return () => peek.destroy();
+	}, [me]);
+
+	return (
+		<>
+			<button
+				ref={trigger}
+				type="button"
+				className={me ? "bubble me" : "bubble"}
+			>
+				{text}
+			</button>
+			{open &&
+				createPortal(
+					<div ref={menu} className="pmenu">
+						{ITEMS.map(([label, hint]) => (
+							<button key={label} type="button" data-emerse-item={label}>
+								{label}
+								<span>{hint}</span>
+							</button>
+						))}
+					</div>,
+					document.body,
+				)}
+		</>
+	);
+}
+
+function ChatDemo() {
+	return (
+		<section className="demo">
+			<h2>Peek menu</h2>
+			<p>Press and hold a message.</p>
+			<div className="stage">
+				<div className="chat">
+					<Bubble text="Are we still on for dinner?" />
+					<Bubble text="Yes! See you at 7?" me />
+					<Bubble text="Perfect. I'll book the table by the window." />
+				</div>
+			</div>
+		</section>
+	);
+}
+
 function App() {
 	return (
 		<main className="wrap">
 			<style>{css}</style>
 			<h1>emerse playground</h1>
+			<ChatDemo />
 			<PressDemo />
 		</main>
 	);
