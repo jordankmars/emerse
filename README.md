@@ -29,13 +29,13 @@ import { Emerse } from "emerse/react";
 </Emerse.Root>;
 ```
 
-| Part             | Renders           | Props                                                                                                    |
-| ---------------- | ----------------- | -------------------------------------------------------------------------------------------------------- |
-| `Emerse.Root`    | nothing           | `onOpenChange(open)`, called when the menu starts opening and closing. `container`, defaults to the body |
-| `Emerse.Trigger` | `div`             | `asChild`, and `clone` to build the lifted copy yourself                                                 |
-| `Emerse.Overlay` | `div`, while open | Optional. Without it, outside taps still dismiss the menu but nothing is painted                         |
-| `Emerse.Menu`    | `div`, while open | `align`, `"start"` or `"end"`                                                                            |
-| `Emerse.Item`    | `button`          | `onSelect`, `disabled`, `asChild`                                                                        |
+| Part             | Renders           | Props                                                                                                                                                     |
+| ---------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Emerse.Root`    | nothing           | `onOpenChange(open)`, called when the menu starts opening and closing. `onClosed`, called once it has finished closing. `container`, defaults to the body |
+| `Emerse.Trigger` | `div`             | `asChild`, and `clone` to build the lifted copy yourself                                                                                                  |
+| `Emerse.Overlay` | `div`, while open | Optional. Without it, outside taps still dismiss the menu but nothing is painted                                                                          |
+| `Emerse.Menu`    | `div`, while open | `align`, `"start"` or `"end"`                                                                                                                             |
+| `Emerse.Item`    | `button`          | `onSelect`, `disabled`, `asChild`                                                                                                                         |
 
 Every part that renders an element also takes that element's usual props and a
 ref. `asChild` puts the behaviour on your own element instead:
@@ -44,6 +44,27 @@ ref. `asChild` puts the behaviour on your own element instead:
 <Emerse.Item asChild onSelect={open}>
 	<a href="/thread">Open thread</a>
 </Emerse.Item>;
+```
+
+### Removing an item
+
+Unmounting the Root ends the close animation on the spot. To let it finish, note
+the pick in `onSelect` and remove the item in `onClosed`:
+
+```tsx
+function Message({ remove }: { remove: () => void }) {
+	const deleting = useRef(false);
+	return (
+		<Emerse.Root onClosed={() => deleting.current && remove()}>
+			<Emerse.Trigger>…message…</Emerse.Trigger>
+			<Emerse.Menu>
+				<Emerse.Item onSelect={() => (deleting.current = true)}>
+					Delete
+				</Emerse.Item>
+			</Emerse.Menu>
+		</Emerse.Root>
+	);
+}
 ```
 
 ## Styling
