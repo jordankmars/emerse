@@ -713,3 +713,52 @@ describe("screen readers", () => {
 		expect(div.hasAttribute("aria-haspopup")).toBe(false);
 	});
 });
+
+describe("staying in place", () => {
+	const rect = (left: number, top: number) =>
+		({
+			left,
+			top,
+			right: left + 100,
+			bottom: top + 40,
+			width: 100,
+			height: 40,
+		}) as DOMRect;
+
+	it("moves with the trigger when the window resizes", () => {
+		const { trigger, menu } = setup();
+		trigger.getBoundingClientRect = () => rect(10, 20);
+		hold(trigger);
+		expect(lifted()?.style.left).toBe("10px");
+		trigger.getBoundingClientRect = () => rect(50, 60);
+		dispatchEvent(new Event("resize"));
+		expect(lifted()?.style.left).toBe("50px");
+		expect(menu.style.top).toBe("110px");
+	});
+
+	it("stops watching once it starts closing", () => {
+		const { trigger } = setup();
+		trigger.getBoundingClientRect = () => rect(10, 20);
+		hold(trigger);
+		peek.close();
+		trigger.getBoundingClientRect = () => rect(50, 60);
+		dispatchEvent(new Event("resize"));
+		expect(lifted()?.style.left).toBe("10px");
+	});
+});
+
+describe("one at a time", () => {
+	it("closes the open menu when another opens", () => {
+		const { trigger } = setup();
+		const first = peek;
+		hold(trigger);
+		pointer("pointerup", window);
+
+		const { trigger: second } = setup();
+		second.dispatchEvent(new MouseEvent("contextmenu", { cancelable: true }));
+		expect(first.phase).toBe("closed");
+		expect(peek.phase).toBe("open");
+		expect(document.querySelectorAll("[data-emerse-overlay]")).toHaveLength(1);
+		first.destroy();
+	});
+});

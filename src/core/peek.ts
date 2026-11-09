@@ -3,7 +3,7 @@ import { config, isReduced } from "./config";
 import { inertOthers } from "./inert";
 import { lockScroll } from "./lock";
 import { Motion } from "./motion";
-import { placeMenu } from "./placement";
+import { placeMenu, type View } from "./placement";
 import { Press } from "./press";
 import { isVirtualClick, isVirtualPointerDown } from "./virtual";
 
@@ -46,6 +46,17 @@ interface Stage {
 	menu: HTMLElement;
 	lift: Motion;
 	reveal: Motion;
+}
+
+/** Only one menu is ever up, so a new one sends the last one straight home. */
+let current: Peek | null = null;
+
+/** The part of the page you can see, which excludes the iOS keyboard. */
+function visibleArea(): View {
+	const v = window.visualViewport;
+	return v
+		? { x: v.offsetLeft, y: v.offsetTop, w: v.width, h: v.height }
+		: { x: 0, y: 0, w: innerWidth, h: innerHeight };
 }
 
 /** Runs `then` once it has been called `count` times. */
@@ -132,7 +143,8 @@ export class Peek {
 		if (!stage || this.phase === "closing") return;
 		this.set("closing");
 		this.endDrag();
-		document.removeEventListener("keydown", this.onKeyDown, true);
+		this.forget();
+		this.unwatch();
 		this.el?.setAttribute("aria-expanded", "false");
 		this.releaseInert();
 		this.uncloak();
@@ -154,6 +166,8 @@ export class Peek {
 		this.squeeze.jump(1);
 		const stage = this.stage ?? this.mount(from);
 		if (!stage) return;
+		if (current !== this) current?.teardown();
+		current = this;
 		stage.overlay.style.pointerEvents = "";
 		stage.menu.style.pointerEvents = "";
 		this.set("opening");
@@ -175,8 +189,7 @@ export class Peek {
 		}
 		this.unlock ??= lockScroll(() => stage.menu);
 		this.applyInert();
-		// Capture, so the key press that opened the menu doesn't also reach it.
-		document.addEventListener("keydown", this.onKeyDown, true);
+		this.watch();
 		const first = focusFirst ? this.items(stage.menu)[0] : null;
 		(first ?? stage.menu).focus({ preventScroll: true });
 	}
@@ -255,8 +268,7 @@ export class Peek {
 		const edge = end !== rtl ? "right" : "left";
 		// offsetWidth ignores the scale the menu springs in from.
 		const size = { w: menu.offsetWidth, h: menu.offsetHeight };
-		const view = { x: 0, y: 0, w: innerWidth, h: innerHeight };
-		const { left, top, below } = placeMenu(rect, size, view, edge);
+		const { left, top, below } = placeMenu(rect, size, visibleArea(), edge);
 		Object.assign(menu.style, {
 			left: `${left}px`,
 			top: `${top}px`,
@@ -298,7 +310,8 @@ export class Peek {
 			style.removeProperty(prop);
 		}
 		stage.menu.removeAttribute("tabindex");
-		document.removeEventListener("keydown", this.onKeyDown, true);
+		this.forget();
+		this.unwatch();
 		if (this.el) {
 			this.el.style.visibility = this.visibility;
 			this.el.style.opacity = this.opacity;
@@ -332,6 +345,23 @@ export class Peek {
 	private releaseInert(): void {
 		this.uninert?.();
 		this.uninert = null;
+	}
+
+	private forget(): void {
+		if (current === this) current = null;
+	}
+
+	private watch(): void {
+		// Capture, so the key press that opened the menu doesn't also reach it.
+		document.addEventListener("keydown", this.onKeyDown, true);
+		addEventListener("resize", this.onResize);
+		window.visualViewport?.addEventListener("resize", this.onResize);
+	}
+
+	private unwatch(): void {
+		document.removeEventListener("keydown", this.onKeyDown, true);
+		removeEventListener("resize", this.onResize);
+		window.visualViewport?.removeEventListener("resize", this.onResize);
 	}
 
 	private releaseScroll(): void {
@@ -467,6 +497,10 @@ export class Peek {
 		e.preventDefault();
 		e.stopPropagation();
 		this.show(true);
+	};
+
+	private onResize = (): void => {
+		if (this.stage && this.el) this.place(this.stage, this.el);
 	};
 
 	private onTriggerKeyDown = (e: KeyboardEvent): void => {
