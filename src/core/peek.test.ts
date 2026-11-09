@@ -166,3 +166,77 @@ describe("closing", () => {
 		expect(menu.hidden).toBe(true);
 	});
 });
+
+describe("drag to select", () => {
+	function dragOver(item: Element | null) {
+		document.elementFromPoint = () => item;
+		pointer("pointermove", window, { clientX: 40, clientY: 40 });
+	}
+
+	it("highlights the item under the finger", () => {
+		const { trigger, items } = setup();
+		hold(trigger);
+		dragOver(items[1]);
+		expect(items[1].hasAttribute("data-highlighted")).toBe(true);
+		dragOver(items[2]);
+		expect(items[1].hasAttribute("data-highlighted")).toBe(false);
+		expect(items[2].hasAttribute("data-highlighted")).toBe(true);
+	});
+
+	it("picks the item it's released on, in one motion", () => {
+		const onSelect = vi.fn();
+		const { trigger, items } = setup({ onSelect });
+		hold(trigger);
+		dragOver(items[1]);
+		pointer("pointerup", window);
+		expect(onSelect).toHaveBeenCalledExactlyOnceWith(items[1]);
+		expect(peek.phase).toBe("closing");
+	});
+
+	it("stays open when released away from any item", () => {
+		const onSelect = vi.fn();
+		const { trigger } = setup({ onSelect });
+		hold(trigger);
+		dragOver(document.body);
+		pointer("pointerup", window);
+		expect(onSelect).not.toHaveBeenCalled();
+		expect(peek.phase).toBe("open");
+	});
+
+	it("picks nothing when the gesture is cancelled", () => {
+		const onSelect = vi.fn();
+		const { trigger, items } = setup({ onSelect });
+		hold(trigger);
+		dragOver(items[0]);
+		pointer("pointercancel", window);
+		expect(onSelect).not.toHaveBeenCalled();
+		expect(items[0].hasAttribute("data-highlighted")).toBe(false);
+	});
+
+	it("follows only the finger that started", () => {
+		const onSelect = vi.fn();
+		const { trigger, items } = setup({ onSelect });
+		hold(trigger);
+		dragOver(items[0]);
+		pointer("pointerup", window, { pointerId: 2 });
+		expect(onSelect).not.toHaveBeenCalled();
+	});
+
+	it("can be tapped through after the finger lifts", () => {
+		const onSelect = vi.fn();
+		const { trigger, items } = setup({ onSelect });
+		hold(trigger);
+		pointer("pointerup", window);
+		items[2].click();
+		expect(onSelect).toHaveBeenCalledExactlyOnceWith(items[2]);
+	});
+
+	it("ignores disabled items", () => {
+		const onSelect = vi.fn();
+		const { trigger, items } = setup({ onSelect });
+		items[0].disabled = true;
+		hold(trigger);
+		dragOver(items[0]);
+		expect(items[0].hasAttribute("data-highlighted")).toBe(false);
+	});
+});

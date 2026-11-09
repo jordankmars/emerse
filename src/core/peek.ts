@@ -19,8 +19,12 @@ export interface PeekOptions {
 	commit?: (open: boolean) => void;
 	/** Which edge of the trigger the menu lines up with. */
 	align?: "start" | "end";
+	/** A menu item was picked, by drag, tap or keyboard. */
+	onSelect?: (item: HTMLElement) => void;
 	onPhase?: (phase: Phase) => void;
 }
+
+const ITEM = '[data-emerse-item]:not([disabled],[aria-disabled="true"])';
 
 const SQUEEZE = { duration: 0.45, bounce: 0, rest: 0.001 };
 const LIFT = { duration: 0.45, bounce: 0.35, rest: 0.001 };
@@ -52,6 +56,9 @@ export class Peek {
 	private el: HTMLElement | null = null;
 	private stage: Stage | null = null;
 	private fadeTimer = 0;
+	private pointerId = 0;
+	private dragging = false;
+	private hot: HTMLElement | null = null;
 	private visibility = "";
 	private press: Press;
 	private squeeze: Motion;
@@ -63,8 +70,9 @@ export class Peek {
 		});
 		this.press = new Press({
 			onFire: () => {
-				this.unlisten();
 				this.show();
+				if (this.phase === "closed") this.unlisten();
+				else this.dragging = true;
 			},
 			onCancel: () => {
 				this.unlisten();
@@ -91,6 +99,7 @@ export class Peek {
 	close(): void {
 		const { stage } = this;
 		if (!stage || this.phase === "closing") return;
+		this.endDrag();
 		this.set("closing");
 		stage.overlay.style.pointerEvents = "none";
 		stage.menu.style.pointerEvents = "none";
@@ -137,6 +146,7 @@ export class Peek {
 			opacity: "0",
 		});
 		overlay.addEventListener("pointerdown", this.onOverlayDown);
+		menu.addEventListener("click", this.onMenuClick);
 
 		const clone = cloneTrigger(trigger);
 		clone.dataset.emerseLifted = "";
@@ -212,6 +222,7 @@ export class Peek {
 		this.stage = null;
 		stage.overlay.remove();
 		stage.clone.remove();
+		stage.menu.removeEventListener("click", this.onMenuClick);
 		const { style } = stage.menu;
 		for (const prop of [
 			"position",
@@ -232,6 +243,7 @@ export class Peek {
 	/** Drops straight to closed, without animating. */
 	private teardown(): void {
 		this.press.cancel();
+		this.endDrag();
 		this.squeeze.jump(1);
 		const { stage } = this;
 		if (!stage) return;
@@ -239,6 +251,31 @@ export class Peek {
 		stage.lift.stop();
 		stage.reveal.stop();
 		this.finish();
+	}
+
+	private endDrag(): void {
+		if (!this.dragging) return;
+		this.dragging = false;
+		this.unlisten();
+		this.highlight(null);
+	}
+
+	private highlight(item: HTMLElement | null): void {
+		if (item === this.hot) return;
+		this.hot?.removeAttribute("data-highlighted");
+		item?.setAttribute("data-highlighted", "");
+		this.hot = item;
+	}
+
+	private itemAt(x: number, y: number): HTMLElement | null {
+		const hit = document.elementFromPoint(x, y)?.closest<HTMLElement>(ITEM);
+		return hit && this.stage?.menu.contains(hit) ? hit : null;
+	}
+
+	private pick(item: HTMLElement): void {
+		if (this.phase !== "opening" && this.phase !== "open") return;
+		this.options.onSelect?.(item);
+		this.close();
 	}
 
 	private detach(): void {
@@ -266,21 +303,37 @@ export class Peek {
 			return;
 		}
 		if (!this.press.down(e.pointerId, e.clientX, e.clientY)) return;
+		this.pointerId = e.pointerId;
 		this.squeeze.set(PRESSED_SCALE);
 		this.listen();
 	};
 
 	private onPointerMove = (e: PointerEvent): void => {
 		this.press.move(e.pointerId, e.clientX, e.clientY);
+		if (this.dragging && e.pointerId === this.pointerId) {
+			this.highlight(this.itemAt(e.clientX, e.clientY));
+		}
 	};
 
 	private onPointerEnd = (e: PointerEvent): void => {
-		this.press.up(e.pointerId);
+		if (this.press.active) {
+			this.press.up(e.pointerId);
+			return;
+		}
+		if (!this.dragging || e.pointerId !== this.pointerId) return;
+		const item = this.hot;
+		this.endDrag();
+		if (item && e.type === "pointerup") this.pick(item);
 	};
 
 	private onOverlayDown = (e: PointerEvent): void => {
 		e.preventDefault();
 		this.close();
+	};
+
+	private onMenuClick = (e: MouseEvent): void => {
+		const item = (e.target as Element).closest<HTMLElement>(ITEM);
+		if (item) this.pick(item);
 	};
 
 	private listen(): void {
