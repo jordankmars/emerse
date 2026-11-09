@@ -762,3 +762,89 @@ describe("one at a time", () => {
 		first.destroy();
 	});
 });
+
+describe("for adapters", () => {
+	it("opens and closes from code", () => {
+		const { items } = setup();
+		peek.open();
+		expect(peek.phase).toBe("open");
+		expect(document.activeElement).toBe(items[0]);
+		peek.close();
+		vi.advanceTimersByTime(1);
+		expect(peek.phase).toBe("closed");
+	});
+
+	it("reopens during a close without building a second copy", () => {
+		setup();
+		peek.open();
+		const copy = lifted();
+		peek.close();
+		peek.open();
+		expect(peek.phase).toBe("open");
+		expect(lifted()).toBe(copy);
+		vi.advanceTimersByTime(500);
+		expect(peek.phase).toBe("open");
+		expect(lifted()).toBe(copy);
+	});
+
+	it("attaches once however many times it's asked", () => {
+		const onPhase = vi.fn();
+		const { trigger } = setup({ onPhase });
+		peek.attach();
+		peek.attach();
+		hold(trigger);
+		expect(onPhase).toHaveBeenCalledTimes(2);
+	});
+
+	it("survives being destroyed and attached again", () => {
+		const { trigger } = setup();
+		peek.destroy();
+		peek.attach();
+		hold(trigger);
+		expect(peek.phase).toBe("open");
+	});
+
+	it("moves to a new trigger element", () => {
+		const first = document.createElement("button");
+		const second = document.createElement("button");
+		document.body.append(first, second);
+		let el = first;
+		const menu = document.createElement("div");
+		peek = new Peek({ trigger: () => el, menu: () => menu });
+		peek.attach();
+		el = second;
+		peek.attach();
+		expect(first.hasAttribute("aria-haspopup")).toBe(false);
+		hold(second);
+		expect(peek.phase).toBe("open");
+	});
+
+	it("uses the latest callbacks", () => {
+		const stale = vi.fn();
+		const fresh = vi.fn();
+		const { trigger, items } = setup({ onSelect: stale });
+		peek.update({ onSelect: fresh });
+		hold(trigger);
+		pointer("pointerup", window);
+		pointer("pointerdown", items[0]);
+		items[0].click();
+		expect(stale).not.toHaveBeenCalled();
+		expect(fresh).toHaveBeenCalledOnce();
+	});
+
+	it("mounts into the given container", () => {
+		const host = document.body.appendChild(document.createElement("div"));
+		setup({ container: () => host });
+		peek.open();
+		expect(overlay()?.parentElement).toBe(host);
+		expect(lifted()?.parentElement).toBe(host);
+	});
+
+	it("uses a custom copy", () => {
+		const custom = document.createElement("canvas");
+		setup({ clone: () => custom });
+		peek.open();
+		expect(lifted()).toBe(custom);
+		expect(custom.style.position).toBe("fixed");
+	});
+});

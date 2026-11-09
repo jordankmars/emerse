@@ -20,6 +20,10 @@ export interface PeekOptions {
 	 * Without it the menu's `hidden` attribute is toggled instead.
 	 */
 	commit?: (open: boolean) => void;
+	/** Where the overlay and the lifted copy go. Defaults to the body. */
+	container?: () => Element | null;
+	/** Builds the lifted copy, for triggers a plain clone can't reproduce. */
+	clone?: (trigger: HTMLElement) => HTMLElement;
 	/** Which edge of the trigger the menu lines up with. */
 	align?: "start" | "end";
 	/** A menu item was picked, by drag, tap or keyboard. */
@@ -113,6 +117,11 @@ export class Peek {
 		});
 	}
 
+	/** Swaps in new callbacks without touching what's on screen. */
+	update(next: Partial<PeekOptions>): void {
+		this.options = { ...this.options, ...next };
+	}
+
 	/** Starts listening on the trigger. Safe to call more than once. */
 	attach(): void {
 		const el = this.options.trigger();
@@ -136,6 +145,12 @@ export class Peek {
 	destroy(): void {
 		this.teardown();
 		this.detach();
+	}
+
+	/** Opens with focus on the first item, the way a keyboard does. */
+	open(): void {
+		this.press.cancel();
+		this.show(true);
 	}
 
 	close(): void {
@@ -216,7 +231,7 @@ export class Peek {
 		menu.addEventListener("click", this.onMenuClick);
 		menu.addEventListener("contextmenu", blockContextMenu);
 
-		const clone = cloneTrigger(trigger);
+		const clone = (this.options.clone ?? cloneTrigger)(trigger);
 		clone.dataset.emerseLifted = "";
 		clone.setAttribute("aria-hidden", "true");
 		clone.inert = true;
@@ -239,7 +254,7 @@ export class Peek {
 
 		const stage = { overlay, clone, menu, lift, reveal };
 		this.stage = stage;
-		document.body.append(overlay, clone);
+		(this.options.container?.() ?? document.body).append(overlay, clone);
 		menu.style.position = "fixed";
 		// Lets the menu take focus on its own, so its keys work after a pointer open.
 		menu.tabIndex = -1;
