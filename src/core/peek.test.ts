@@ -858,6 +858,79 @@ describe("for adapters", () => {
 		expect(lifted()?.parentElement).toBe(host);
 	});
 
+	describe("following links", () => {
+		function withLink(options: Partial<PeekOptions> = {}) {
+			const parts = setup(options);
+			const link = document.createElement("a");
+			link.href = "#thread";
+			link.dataset.emerseItem = "link";
+			parts.menu.append(link);
+			const clicks: boolean[] = [];
+			link.addEventListener("click", (e) => {
+				clicks.push(e.defaultPrevented);
+				e.preventDefault();
+			});
+			return { ...parts, link, clicks };
+		}
+
+		function dragOnto(trigger: Element, item: HTMLElement) {
+			hold(trigger);
+			document.elementFromPoint = () => item;
+			pointer("pointermove", window);
+			pointer("pointerup", window);
+		}
+
+		function pressEnter(item: HTMLElement) {
+			item.focus();
+			item.dispatchEvent(
+				new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+			);
+		}
+
+		it("clicks a link released on, past the stray click guard", () => {
+			const onSelect = vi.fn();
+			const { trigger, link, clicks } = withLink({ onSelect });
+			dragOnto(trigger, link);
+			expect(clicks).toEqual([false]);
+			expect(onSelect).toHaveBeenCalledOnce();
+		});
+
+		it("clicks a link picked from the keyboard", () => {
+			const onSelect = vi.fn();
+			const { link, clicks } = withLink({ onSelect });
+			peek.open();
+			pressEnter(link);
+			expect(clicks).toEqual([false]);
+			expect(onSelect).toHaveBeenCalledOnce();
+		});
+
+		it("leaves a tap to the browser", () => {
+			const onSelect = vi.fn();
+			const { link, clicks } = withLink({ onSelect });
+			peek.open();
+			link.click();
+			expect(clicks).toEqual([false]);
+			expect(onSelect).toHaveBeenCalledOnce();
+		});
+
+		it("doesn't click anything that isn't a link", () => {
+			const { trigger, items } = setup();
+			const onClick = vi.fn();
+			items[0].addEventListener("click", onClick);
+			dragOnto(trigger, items[0]);
+			expect(onClick).not.toHaveBeenCalled();
+		});
+
+		it("still swallows the click that follows the release", () => {
+			const { trigger, link, items } = withLink();
+			dragOnto(trigger, link);
+			const onClick = vi.fn();
+			items[0].addEventListener("click", onClick);
+			items[0].click();
+			expect(onClick).not.toHaveBeenCalled();
+		});
+	});
+
 	describe("with a given overlay", () => {
 		function given() {
 			const el = document.createElement("div");

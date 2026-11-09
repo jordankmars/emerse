@@ -94,6 +94,8 @@ export class Peek {
 	private selection: { standard: string; webkit: string } | null = null;
 	private dragging = false;
 	private hot: HTMLElement | null = null;
+	/** A link being clicked on purpose, which the stray click guard lets past. */
+	private following: HTMLElement | null = null;
 	private strayTimer = 0;
 	private addedTabIndex = false;
 	private unlock: (() => void) | null = null;
@@ -464,6 +466,16 @@ export class Peek {
 		this.close();
 	}
 
+	/** A pick with no click behind it still has to take a link somewhere. */
+	private pickAndFollow(item: HTMLElement): void {
+		const live = this.phase === "opening" || this.phase === "open";
+		this.pick(item);
+		if (!live || !(item instanceof HTMLAnchorElement) || !item.href) return;
+		this.following = item;
+		item.click();
+		this.following = null;
+	}
+
 	private detach(): void {
 		this.el?.removeEventListener("pointerdown", this.onPointerDown);
 		this.el?.removeEventListener("touchmove", this.onTouchMove);
@@ -522,7 +534,7 @@ export class Peek {
 		this.endDrag();
 		if (e.type !== "pointerup") return;
 		this.armStrayClick();
-		if (item) this.pick(item);
+		if (item) this.pickAndFollow(item);
 	};
 
 	private onOverlayDown = (e: PointerEvent): void => {
@@ -597,7 +609,7 @@ export class Peek {
 			case " ":
 				e.preventDefault();
 				// A held key from opening the menu mustn't also pick from it.
-				if (!e.repeat && at >= 0) this.pick(items[at]);
+				if (!e.repeat && at >= 0) this.pickAndFollow(items[at]);
 				break;
 		}
 	};
@@ -692,6 +704,7 @@ export class Peek {
 	};
 
 	private onStrayClick = (e: MouseEvent): void => {
+		if (e.target === this.following) return;
 		e.preventDefault();
 		e.stopPropagation();
 		this.disarmStrayClick();
