@@ -1,10 +1,12 @@
-import { StrictMode } from "react";
+import { StrictMode, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { Motion } from "../src/core/motion";
+import { Press } from "../src/core/press";
 
 // Everything the playground does lives in this file on purpose: it talks to the
 // core directly, so the core can be tried out before there's a React adapter.
 
-const css = String.raw`
+const css = `
 :root {
 	--bg: #f6f6f8;
 	--surface: #ffffff;
@@ -48,13 +50,80 @@ h1, h2, p { margin: 0; }
 .demo > p { color: var(--muted); font-size: 13px; }
 .stage { position: relative; min-height: 240px; background: var(--stage); border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 16px; }
 .note { font-size: 12px; color: var(--muted); text-align: center; }
+.column { display: grid; gap: 12px; justify-items: center; }
+.bubble { max-width: 78%; padding: 8px 13px; border-radius: 18px; background: var(--surface); text-align: left; cursor: default; }
+.bubble.me { background: var(--accent); color: #fff; }
 `;
+
+// The recogniser on its own, before anything opens: shrink while held, then say
+// what the press turned into.
+function PressDemo() {
+	const ref = useRef<HTMLButtonElement>(null);
+	const [status, setStatus] = useState("Hold for half a second");
+
+	useEffect(() => {
+		const el = ref.current;
+		if (!el) return;
+		const squeeze = new Motion(
+			1,
+			{ duration: 0.45, bounce: 0, rest: 0.001 },
+			(s) => {
+				el.style.transform = s === 1 ? "" : `scale(${s})`;
+			},
+		);
+		const press = new Press({
+			onFire: () => {
+				squeeze.set(1);
+				setStatus("Long press");
+			},
+			onCancel: () => {
+				squeeze.set(1);
+				setStatus("Cancelled");
+			},
+		});
+		const down = (e: PointerEvent) => {
+			if (e.button === 0 && press.down(e.pointerId, e.clientX, e.clientY)) {
+				squeeze.set(0.95);
+				setStatus("Holding");
+			}
+		};
+		const move = (e: PointerEvent) =>
+			press.move(e.pointerId, e.clientX, e.clientY);
+		const up = (e: PointerEvent) => press.up(e.pointerId);
+		el.addEventListener("pointerdown", down);
+		addEventListener("pointermove", move);
+		addEventListener("pointerup", up);
+		addEventListener("pointercancel", up);
+		return () => {
+			el.removeEventListener("pointerdown", down);
+			removeEventListener("pointermove", move);
+			removeEventListener("pointerup", up);
+			removeEventListener("pointercancel", up);
+			press.cancel();
+			squeeze.stop();
+		};
+	}, []);
+
+	return (
+		<section className="demo">
+			<h2>Long press</h2>
+			<p>Hold still to fire. Move more than 8px or let go early to cancel.</p>
+			<div className="stage column">
+				<button ref={ref} type="button" className="bubble">
+					Press and hold me
+				</button>
+				<p className="note">{status}</p>
+			</div>
+		</section>
+	);
+}
 
 function App() {
 	return (
 		<main className="wrap">
 			<style>{css}</style>
 			<h1>emerse playground</h1>
+			<PressDemo />
 		</main>
 	);
 }
