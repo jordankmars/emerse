@@ -254,7 +254,11 @@ export class Peek {
 
 		const stage = { overlay, clone, menu, lift, reveal };
 		this.stage = stage;
-		(this.options.container?.() ?? document.body).append(overlay, clone);
+		const target = this.options.container?.() ?? document.body;
+		// Fixed elements paint in tree order, and the menu is already mounted. A
+		// menu rendered inline is left alone, since its parent could be transformed.
+		if (menu.parentElement === target) menu.before(overlay, clone);
+		else target.append(overlay, clone);
 		menu.style.position = "fixed";
 		// Lets the menu take focus on its own, so its keys work after a pointer open.
 		menu.tabIndex = -1;

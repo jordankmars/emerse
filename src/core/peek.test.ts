@@ -109,6 +109,24 @@ describe("opening", () => {
 		expect(menu.style.position).toBe("fixed");
 	});
 
+	it("stacks the overlay and copy beneath the menu", () => {
+		const { trigger, menu } = setup();
+		hold(trigger);
+		const follows = (a: Node, b: Node) =>
+			a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING;
+		expect(follows(overlay() as Node, lifted() as Node)).toBeTruthy();
+		expect(follows(lifted() as Node, menu)).toBeTruthy();
+	});
+
+	it("keeps the overlay in the container when the menu lives elsewhere", () => {
+		const host = document.createElement("div");
+		document.body.append(host);
+		const { trigger, menu } = setup({ container: () => host });
+		hold(trigger);
+		expect(menu.parentElement).toBe(document.body);
+		expect([...host.children]).toEqual([overlay(), lifted()]);
+	});
+
 	it("doesn't carry ids onto the copy", () => {
 		const { trigger } = setup();
 		trigger.id = "message";
