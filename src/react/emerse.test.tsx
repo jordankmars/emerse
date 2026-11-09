@@ -1,10 +1,12 @@
 // @vitest-environment jsdom
-import { act, type ReactNode, StrictMode } from "react";
+import { act, type ReactNode, StrictMode, useState } from "react";
 import { createRoot, type Root as ReactRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { configure } from "../core";
-import { Root } from "./root";
+import { Item } from "./item";
+import { Menu } from "./menu";
+import { Root, type RootProps } from "./root";
 import { Trigger } from "./trigger";
 
 (
@@ -20,6 +22,77 @@ function render(ui: ReactNode) {
 	roots.push(root);
 	act(() => root.render(ui));
 	return { host, root };
+}
+
+function pointer(
+	type: string,
+	target: EventTarget,
+	init: PointerEventInit = {},
+) {
+	target.dispatchEvent(
+		new PointerEvent(type, {
+			bubbles: true,
+			cancelable: true,
+			pointerId: 1,
+			button: 0,
+			width: 20,
+			height: 20,
+			pressure: 0.5,
+			...init,
+		}),
+	);
+}
+
+const triggers = () => [
+	...document.querySelectorAll<HTMLElement>('[aria-haspopup="menu"]'),
+];
+const menu = () => document.querySelector<HTMLElement>('[role="menu"]');
+const items = () => [
+	...document.querySelectorAll<HTMLElement>("[data-emerse-item]"),
+];
+
+function hold(el = triggers()[0]) {
+	act(() => {
+		pointer("pointerdown", el);
+		vi.advanceTimersByTime(450);
+	});
+}
+
+/** Opens without a drag, so the finger isn't still down afterwards. */
+function rightClick(el = triggers()[0]) {
+	act(() => {
+		el.dispatchEvent(
+			new MouseEvent("contextmenu", { bubbles: true, cancelable: true }),
+		);
+	});
+}
+
+function settle() {
+	act(() => {
+		vi.advanceTimersByTime(1);
+	});
+}
+
+function example(
+	props: RootProps = {},
+	onReply?: () => void,
+	menuProps: { align?: "start" | "end" } = {},
+) {
+	return (
+		<Root {...props}>
+			<Trigger>Message</Trigger>
+			<Menu {...menuProps}>
+				<Item onSelect={onReply}>Reply</Item>
+				<Item disabled>Copy</Item>
+			</Menu>
+		</Root>
+	);
+}
+
+/** A message whose only action deletes it. */
+function Thread() {
+	const [gone, setGone] = useState(false);
+	return gone ? null : example({}, () => setGone(true));
 }
 
 beforeEach(() => {
@@ -112,11 +185,221 @@ describe("Trigger", () => {
 	});
 });
 
+describe("Menu", () => {
+	it("is absent until it opens, then leaves again", () => {
+		render(example());
+		expect(menu()).toBeNull();
+		rightClick();
+		expect(menu()?.parentElement).toBe(document.body);
+		act(() => {
+			pointer(
+				"pointerdown",
+				document.querySelector("[data-emerse-overlay]") as Element,
+			);
+		});
+		settle();
+		expect(menu()).toBeNull();
+	});
+
+	it("opens from a held press", () => {
+		render(example());
+		hold();
+		expect(menu()).not.toBeNull();
+	});
+
+	it("goes into the given container", () => {
+		const place = document.body.appendChild(document.createElement("section"));
+		render(example({ container: place }));
+		rightClick();
+		expect(menu()?.parentElement).toBe(place);
+	});
+
+	it("stays open through prop changes", () => {
+		const { root } = render(example());
+		rightClick();
+		const el = menu();
+		act(() => root.render(example({}, () => {}, { align: "end" })));
+		expect(menu()).toBe(el);
+	});
+
+	it("works under StrictMode", () => {
+		render(<StrictMode>{example()}</StrictMode>);
+		rightClick();
+		expect(menu()).not.toBeNull();
+	});
+
+	it("puts everything back when unmounted while open", () => {
+		const other = document.body.appendChild(document.createElement("div"));
+		const { root } = render(example());
+		rightClick();
+		expect(other.hasAttribute("inert")).toBe(true);
+		act(() => root.unmount());
+		roots = [];
+		expect(other.hasAttribute("inert")).toBe(false);
+		expect(document.documentElement.style.overflow).toBe("");
+		expect(document.querySelector("[data-emerse-overlay]")).toBeNull();
+		expect(document.querySelector("[data-emerse-lifted]")).toBeNull();
+	});
+
+	it("doesn't send a pick to the React parent", () => {
+		const onClick = vi.fn();
+		render(
+			// biome-ignore lint/a11y/noStaticElementInteractions: stands in for a clickable row.
+			// biome-ignore lint/a11y/useKeyWithClickEvents: stands in for a clickable row.
+			<div onClick={onClick}>{example()}</div>,
+		);
+		rightClick();
+		act(() => items()[0].click());
+		expect(onClick).not.toHaveBeenCalled();
+	});
+});
+
+describe("Item", () => {
+	it("is a button that core can find", () => {
+		render(example());
+		rightClick();
+		const [reply] = items();
+		expect(reply.tagName).toBe("BUTTON");
+		expect(reply.getAttribute("type")).toBe("button");
+		expect(reply.getAttribute("role")).toBe("menuitem");
+		expect(reply.tabIndex).toBe(-1);
+	});
+
+	it("fires on a tap", () => {
+		const onReply = vi.fn();
+		render(example({}, onReply));
+		rightClick();
+		act(() => items()[0].click());
+		expect(onReply).toHaveBeenCalledOnce();
+	});
+
+	it("fires on a drag released over it", () => {
+		const onReply = vi.fn();
+		render(example({}, onReply));
+		hold();
+		const [reply] = items();
+		document.elementFromPoint = () => reply;
+		act(() => pointer("pointermove", reply));
+		// On the item itself, as a mouse sends it, so it has to reach the window.
+		act(() => pointer("pointerup", reply));
+		expect(onReply).toHaveBeenCalledOnce();
+	});
+
+	it("fires from the keyboard", () => {
+		const onReply = vi.fn();
+		render(example({}, onReply));
+		act(() => {
+			triggers()[0].focus();
+			triggers()[0].dispatchEvent(
+				new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+			);
+		});
+		expect(document.activeElement).toBe(items()[0]);
+		act(() => {
+			items()[0].dispatchEvent(
+				new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+			);
+		});
+		expect(onReply).toHaveBeenCalledOnce();
+	});
+
+	it("uses the latest handler", () => {
+		const stale = vi.fn();
+		const fresh = vi.fn();
+		const { root } = render(example({}, stale));
+		rightClick();
+		act(() => root.render(example({}, fresh)));
+		act(() => items()[0].click());
+		expect(stale).not.toHaveBeenCalled();
+		expect(fresh).toHaveBeenCalledOnce();
+	});
+
+	it("skips disabled items", () => {
+		const onCopy = vi.fn();
+		render(
+			<Root>
+				<Trigger>Message</Trigger>
+				<Menu>
+					<Item disabled onSelect={onCopy}>
+						Copy
+					</Item>
+				</Menu>
+			</Root>,
+		);
+		rightClick();
+		act(() => items()[0].click());
+		expect(onCopy).not.toHaveBeenCalled();
+		expect(menu()).not.toBeNull();
+	});
+
+	it("lands on the child with asChild, and disables by attribute", () => {
+		render(
+			<Root>
+				<Trigger>Message</Trigger>
+				<Menu>
+					<Item asChild disabled>
+						<a href="#x">Open thread</a>
+					</Item>
+				</Menu>
+			</Root>,
+		);
+		rightClick();
+		const [link] = items();
+		expect(link.tagName).toBe("A");
+		expect(link.getAttribute("aria-disabled")).toBe("true");
+		expect(link.hasAttribute("disabled")).toBe(false);
+	});
+
+	it("can remove its own Root", () => {
+		render(<Thread />);
+		rightClick();
+		act(() => items()[0].click());
+		settle();
+		expect(menu()).toBeNull();
+		expect(document.querySelector("[data-emerse-overlay]")).toBeNull();
+		expect(document.querySelector("[data-emerse-lifted]")).toBeNull();
+		expect(document.documentElement.style.overflow).toBe("");
+	});
+});
+
+describe("onOpenChange", () => {
+	it("reports the start of opening and of closing, once each", () => {
+		const onOpenChange = vi.fn();
+		render(example({ onOpenChange }));
+		rightClick();
+		expect(onOpenChange.mock.calls).toEqual([[true]]);
+		act(() => items()[0].click());
+		settle();
+		expect(onOpenChange.mock.calls).toEqual([[true], [false]]);
+	});
+
+	it("reports the old menu closing when another takes over", () => {
+		const first = vi.fn();
+		const second = vi.fn();
+		render(
+			<>
+				{example({ onOpenChange: first })}
+				{example({ onOpenChange: second })}
+			</>,
+		);
+		rightClick(triggers()[0]);
+		// The second trigger is inert by now, but a programmatic event still lands.
+		rightClick(triggers()[1]);
+		expect(first.mock.calls).toEqual([[true], [false]]);
+		expect(second.mock.calls).toEqual([[true]]);
+		expect(document.querySelectorAll('[role="menu"]')).toHaveLength(1);
+	});
+});
+
 it("renders on a server", () => {
 	const html = renderToString(
 		<Root>
 			<Trigger>Message</Trigger>
+			<Menu>
+				<Item>Reply</Item>
+			</Menu>
 		</Root>,
 	);
 	expect(html).toContain("Message");
+	expect(html).not.toContain("Reply");
 });
