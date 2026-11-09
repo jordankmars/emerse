@@ -227,6 +227,8 @@ describe("drag to select", () => {
 		const { trigger, items } = setup({ onSelect });
 		hold(trigger);
 		pointer("pointerup", window);
+		pointer("pointerdown", items[2]);
+		pointer("pointerup", items[2]);
 		items[2].click();
 		expect(onSelect).toHaveBeenCalledExactlyOnceWith(items[2]);
 	});
@@ -238,5 +240,114 @@ describe("drag to select", () => {
 		hold(trigger);
 		dragOver(items[0]);
 		expect(items[0].hasAttribute("data-highlighted")).toBe(false);
+	});
+});
+
+describe("telling a long press from other gestures", () => {
+	function touchMove(target: Element) {
+		const e = new Event("touchmove", { bubbles: true, cancelable: true });
+		target.dispatchEvent(e);
+		return e;
+	}
+
+	it("cancels when the browser takes over for a pan", () => {
+		const { trigger } = setup();
+		pointer("pointerdown", trigger);
+		pointer("pointercancel", trigger);
+		vi.advanceTimersByTime(450);
+		expect(peek.phase).toBe("closed");
+	});
+
+	it("cancels when something around the trigger scrolls", () => {
+		const { trigger } = setup();
+		pointer("pointerdown", trigger);
+		document.dispatchEvent(new Event("scroll"));
+		vi.advanceTimersByTime(450);
+		expect(peek.phase).toBe("closed");
+	});
+
+	it("keeps going when something unrelated scrolls", () => {
+		const { trigger } = setup();
+		const other = document.createElement("div");
+		document.body.append(other);
+		pointer("pointerdown", trigger);
+		other.dispatchEvent(new Event("scroll"));
+		vi.advanceTimersByTime(450);
+		expect(peek.phase).toBe("open");
+	});
+
+	it("only blocks touch panning during a drag", () => {
+		const { trigger } = setup();
+		pointer("pointerdown", trigger);
+		expect(touchMove(trigger).defaultPrevented).toBe(false);
+		vi.advanceTimersByTime(450);
+		expect(touchMove(trigger).defaultPrevented).toBe(true);
+		pointer("pointerup", window);
+		expect(touchMove(trigger).defaultPrevented).toBe(false);
+	});
+
+	it("lets a tap through as a normal click", () => {
+		const { trigger } = setup();
+		const onClick = vi.fn();
+		trigger.addEventListener("click", onClick);
+		pointer("pointerdown", trigger);
+		pointer("pointerup", trigger);
+		trigger.click();
+		expect(onClick).toHaveBeenCalledOnce();
+	});
+
+	it("swallows the click after a long press", () => {
+		const { trigger } = setup();
+		const onClick = vi.fn();
+		document.body.addEventListener("click", onClick);
+		hold(trigger);
+		pointer("pointerup", window);
+		document.body.click();
+		document.body.removeEventListener("click", onClick);
+		expect(onClick).not.toHaveBeenCalled();
+	});
+
+	it("gives up waiting for that click", () => {
+		const { trigger } = setup();
+		const onClick = vi.fn();
+		document.body.addEventListener("click", onClick);
+		hold(trigger);
+		pointer("pointerup", window);
+		vi.advanceTimersByTime(350);
+		document.body.click();
+		document.body.removeEventListener("click", onClick);
+		expect(onClick).toHaveBeenCalledOnce();
+	});
+
+	it("doesn't eat the next real tap", () => {
+		const { trigger, items } = setup();
+		const onSelect = vi.fn();
+		peek.destroy();
+		peek = new Peek({
+			trigger: () => trigger,
+			menu: () => items[0].parentElement,
+			onSelect,
+		});
+		peek.attach();
+		hold(trigger);
+		pointer("pointerup", window);
+		pointer("pointerdown", items[1]);
+		pointer("pointerup", items[1]);
+		items[1].click();
+		expect(onSelect).toHaveBeenCalledExactlyOnceWith(items[1]);
+	});
+
+	it("doesn't let a dismissing tap fall through to the page", () => {
+		const { trigger } = setup();
+		const onClick = vi.fn();
+		document.body.addEventListener("click", onClick);
+		hold(trigger);
+		pointer("pointerup", window);
+		pointer("pointerdown", overlay() as HTMLElement);
+		vi.advanceTimersByTime(600);
+		pointer("pointerup", window);
+		document.body.click();
+		document.body.removeEventListener("click", onClick);
+		expect(onClick).not.toHaveBeenCalled();
 	});
 });

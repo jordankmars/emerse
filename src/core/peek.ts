@@ -30,6 +30,9 @@ const SQUEEZE = { duration: 0.45, bounce: 0, rest: 0.001 };
 const LIFT = { duration: 0.45, bounce: 0.35, rest: 0.001 };
 const REVEAL = { duration: 0.42, bounce: 0.3, rest: 0.002 };
 
+/** How long after release a click still counts as part of the press. */
+const STRAY_CLICK_MS = 350;
+
 const PRESSED_SCALE = 0.95;
 const LIFTED_SCALE = 1.04;
 
@@ -59,6 +62,7 @@ export class Peek {
 	private pointerId = 0;
 	private dragging = false;
 	private hot: HTMLElement | null = null;
+	private strayTimer = 0;
 	private visibility = "";
 	private press: Press;
 	private squeeze: Motion;
@@ -88,6 +92,8 @@ export class Peek {
 		this.detach();
 		this.el = el;
 		el.addEventListener("pointerdown", this.onPointerDown);
+		// Has to exist before the touch starts or iOS won't let it stop a pan.
+		el.addEventListener("touchmove", this.onTouchMove, { passive: false });
 	}
 
 	/** Puts everything back, even if the menu is up. */
@@ -280,7 +286,9 @@ export class Peek {
 
 	private detach(): void {
 		this.el?.removeEventListener("pointerdown", this.onPointerDown);
+		this.el?.removeEventListener("touchmove", this.onTouchMove);
 		this.el = null;
+		this.disarmStrayClick();
 	}
 
 	private commit(open: boolean): void {
@@ -323,12 +331,61 @@ export class Peek {
 		if (!this.dragging || e.pointerId !== this.pointerId) return;
 		const item = this.hot;
 		this.endDrag();
-		if (item && e.type === "pointerup") this.pick(item);
+		if (e.type !== "pointerup") return;
+		this.armStrayClick();
+		if (item) this.pick(item);
 	};
 
 	private onOverlayDown = (e: PointerEvent): void => {
 		e.preventDefault();
+		// The overlay stops catching pointers once it starts closing, so the tap
+		// that dismissed it could otherwise land on the page underneath.
+		this.armStrayClick(true);
 		this.close();
+	};
+
+	/** A pan that starts once the menu is up would end the drag with a cancel. */
+	private onTouchMove = (e: TouchEvent): void => {
+		if (this.dragging && e.cancelable) e.preventDefault();
+	};
+
+	/** Scrolling under a resting finger never moves the pointer. */
+	private onScroll = (e: Event): void => {
+		if (this.el && (e.target as Node).contains(this.el)) this.press.cancel();
+	};
+
+	/**
+	 * The click that follows a long press isn't a tap on whatever is under it.
+	 * Touch often sends none at all, so this can't wait around for one: the next
+	 * press, or a short while after release, gives up on it. Pass `held` when the
+	 * finger is still down, so the wait only starts once it lifts.
+	 */
+	private armStrayClick(held = false): void {
+		if (!held) this.restartStrayTimer();
+		addEventListener("click", this.onStrayClick, true);
+		addEventListener("pointerup", this.restartStrayTimer, true);
+		addEventListener("pointerdown", this.disarmStrayClick, true);
+	}
+
+	private restartStrayTimer = (): void => {
+		clearTimeout(this.strayTimer);
+		this.strayTimer = setTimeout(
+			this.disarmStrayClick,
+			STRAY_CLICK_MS,
+		) as unknown as number;
+	};
+
+	private disarmStrayClick = (): void => {
+		clearTimeout(this.strayTimer);
+		removeEventListener("click", this.onStrayClick, true);
+		removeEventListener("pointerup", this.restartStrayTimer, true);
+		removeEventListener("pointerdown", this.disarmStrayClick, true);
+	};
+
+	private onStrayClick = (e: MouseEvent): void => {
+		e.preventDefault();
+		e.stopPropagation();
+		this.disarmStrayClick();
 	};
 
 	private onMenuClick = (e: MouseEvent): void => {
@@ -340,11 +397,13 @@ export class Peek {
 		addEventListener("pointermove", this.onPointerMove);
 		addEventListener("pointerup", this.onPointerEnd);
 		addEventListener("pointercancel", this.onPointerEnd);
+		addEventListener("scroll", this.onScroll, true);
 	}
 
 	private unlisten(): void {
 		removeEventListener("pointermove", this.onPointerMove);
 		removeEventListener("pointerup", this.onPointerEnd);
 		removeEventListener("pointercancel", this.onPointerEnd);
+		removeEventListener("scroll", this.onScroll, true);
 	}
 }
