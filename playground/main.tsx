@@ -58,7 +58,7 @@ h1, h2, p { margin: 0; }
 .bubble.me { align-self: flex-end; background: var(--accent); color: #fff; }
 [data-emerse-overlay] { z-index: 60; background: var(--scrim); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
 [data-emerse-lifted] { z-index: 61; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18); }
-.corners .bubble, .scroller .bubble { display: block; }
+.corners .bubble { max-width: none; white-space: nowrap; }
 .scroller { height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 12px; background: var(--stage); border-radius: 10px; }
 .corners { position: relative; height: 240px; background: var(--stage); border-radius: 10px; }
 .controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; font-size: 13px; color: var(--muted); }
