@@ -463,3 +463,137 @@ describe("context menu", () => {
 		expect(contextMenu(menu).defaultPrevented).toBe(true);
 	});
 });
+
+describe("keyboard", () => {
+	const key = (
+		target: EventTarget,
+		name: string,
+		init: KeyboardEventInit = {},
+	) => {
+		const e = new KeyboardEvent("keydown", {
+			key: name,
+			bubbles: true,
+			cancelable: true,
+			...init,
+		});
+		target.dispatchEvent(e);
+		return e;
+	};
+
+	for (const name of ["Enter", " ", "ContextMenu"]) {
+		it(`opens on ${JSON.stringify(name)} and focuses the first item`, () => {
+			const { trigger, items } = setup();
+			trigger.focus();
+			expect(key(trigger, name).defaultPrevented).toBe(true);
+			expect(peek.phase).toBe("open");
+			expect(document.activeElement).toBe(items[0]);
+		});
+	}
+
+	it("opens on Shift+F10", () => {
+		const { trigger } = setup();
+		key(trigger, "F10", { shiftKey: true });
+		expect(peek.phase).toBe("open");
+	});
+
+	it("ignores keys from inside the trigger", () => {
+		const { trigger } = setup();
+		const link = trigger.appendChild(document.createElement("a"));
+		key(link, "Enter");
+		expect(peek.phase).toBe("closed");
+	});
+
+	it("wraps with the arrow keys", () => {
+		const { trigger, items } = setup();
+		key(trigger, "Enter");
+		key(items[0], "ArrowUp");
+		expect(document.activeElement).toBe(items[2]);
+		key(items[2], "ArrowDown");
+		expect(document.activeElement).toBe(items[0]);
+		key(items[0], "ArrowDown");
+		expect(document.activeElement).toBe(items[1]);
+	});
+
+	it("jumps with Home and End", () => {
+		const { trigger, items } = setup();
+		key(trigger, "Enter");
+		key(items[0], "End");
+		expect(document.activeElement).toBe(items[2]);
+		key(items[2], "Home");
+		expect(document.activeElement).toBe(items[0]);
+	});
+
+	it("focuses the menu itself after a pointer open, so keys work", () => {
+		const { trigger, menu, items } = setup();
+		hold(trigger);
+		expect(document.activeElement).toBe(menu);
+		key(menu, "ArrowUp");
+		expect(document.activeElement).toBe(items[2]);
+	});
+
+	it("swallows Tab", () => {
+		const { trigger, items } = setup();
+		key(trigger, "Enter");
+		expect(key(items[0], "Tab").defaultPrevented).toBe(true);
+	});
+
+	it("picks the focused item", () => {
+		const onSelect = vi.fn();
+		const { trigger, items } = setup({ onSelect });
+		key(trigger, "Enter");
+		key(items[0], "Enter");
+		expect(onSelect).toHaveBeenCalledExactlyOnceWith(items[0]);
+	});
+
+	it("doesn't pick on a held key", () => {
+		const onSelect = vi.fn();
+		const { trigger, items } = setup({ onSelect });
+		key(trigger, "Enter");
+		key(items[0], "Enter", { repeat: true });
+		expect(onSelect).not.toHaveBeenCalled();
+	});
+
+	it("closes on Escape and gives focus back", () => {
+		const { trigger, items } = setup();
+		trigger.focus();
+		key(trigger, "Enter");
+		key(items[0], "Escape");
+		expect(peek.phase).toBe("closing");
+		expect(document.activeElement).toBe(trigger);
+	});
+
+	it("gives focus back after a pick", () => {
+		const { trigger, items } = setup();
+		key(trigger, "Enter");
+		key(items[1], "Enter");
+		expect(document.activeElement).toBe(trigger);
+	});
+
+	it("leaves focus alone if something else took it", () => {
+		const other = document.body.appendChild(document.createElement("input"));
+		const { trigger, items } = setup({ onSelect: () => other.focus() });
+		key(trigger, "Enter");
+		key(items[1], "Enter");
+		expect(document.activeElement).toBe(other);
+	});
+
+	it("keeps the trigger invisible while it can take focus", () => {
+		const { trigger, items } = setup();
+		key(trigger, "Enter");
+		key(items[0], "Escape");
+		expect(trigger.style.visibility).toBe("");
+		expect(trigger.style.opacity).toBe("0");
+		vi.advanceTimersByTime(1);
+		expect(trigger.style.opacity).toBe("");
+	});
+
+	it("takes focus back after a mouse dismiss", () => {
+		const { trigger } = setup();
+		hold(trigger);
+		pointer("pointerup", window);
+		pointer("pointerdown", overlay() as HTMLElement);
+		(document.activeElement as HTMLElement | null)?.blur();
+		vi.advanceTimersByTime(0);
+		expect(document.activeElement).toBe(trigger);
+	});
+});

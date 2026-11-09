@@ -70,6 +70,7 @@ export class Peek {
 	private hot: HTMLElement | null = null;
 	private strayTimer = 0;
 	private visibility = "";
+	private opacity = "";
 	private press: Press;
 	private squeeze: Motion;
 
@@ -106,6 +107,7 @@ export class Peek {
 		// Has to exist before the touch starts or iOS won't let it stop a pan.
 		el.addEventListener("touchmove", this.onTouchMove, { passive: false });
 		el.addEventListener("contextmenu", this.onContextMenu);
+		el.addEventListener("keydown", this.onTriggerKeyDown);
 		el.style.setProperty("-webkit-touch-callout", "none");
 	}
 
@@ -120,6 +122,9 @@ export class Peek {
 		if (!stage || this.phase === "closing") return;
 		this.endDrag();
 		this.set("closing");
+		document.removeEventListener("keydown", this.onKeyDown, true);
+		this.uncloak();
+		this.returnFocus();
 		stage.overlay.style.pointerEvents = "none";
 		stage.menu.style.pointerEvents = "none";
 		const done = latch(3, () => this.finish());
@@ -130,7 +135,7 @@ export class Peek {
 		this.fade(stage, false, done);
 	}
 
-	private show(): void {
+	private show(focusFirst = false): void {
 		if (this.phase === "opening" || this.phase === "open") return;
 		const from = this.squeeze.x;
 		this.squeeze.jump(1);
@@ -145,6 +150,11 @@ export class Peek {
 		stage.reveal.onRest = done;
 		stage.reveal.set(1);
 		this.fade(stage, true);
+		if (this.el) this.cloak(this.el);
+		// Capture, so the key press that opened the menu doesn't also reach it.
+		document.addEventListener("keydown", this.onKeyDown, true);
+		const first = focusFirst ? this.items(stage.menu)[0] : null;
+		(first ?? stage.menu).focus({ preventScroll: true });
 	}
 
 	private mount(from: number): Stage | null {
@@ -194,12 +204,15 @@ export class Peek {
 		this.stage = stage;
 		document.body.append(overlay, clone);
 		menu.style.position = "fixed";
+		// Lets the menu take focus on its own, so its keys work after a pointer open.
+		menu.tabIndex = -1;
+		menu.style.outline = "none";
 		this.place(stage, trigger);
 		clone.style.transform = `scale(${from})`;
 		applyReveal(0);
 
 		this.visibility = trigger.style.visibility;
-		trigger.style.visibility = "hidden";
+		this.opacity = trigger.style.opacity;
 		return stage;
 	}
 
@@ -254,10 +267,16 @@ export class Peek {
 			"transform",
 			"transform-origin",
 			"pointer-events",
+			"outline",
 		]) {
 			style.removeProperty(prop);
 		}
-		if (this.el) this.el.style.visibility = this.visibility;
+		stage.menu.removeAttribute("tabindex");
+		document.removeEventListener("keydown", this.onKeyDown, true);
+		if (this.el) {
+			this.el.style.visibility = this.visibility;
+			this.el.style.opacity = this.opacity;
+		}
 		this.commit(false);
 		this.set("closed");
 	}
@@ -273,6 +292,31 @@ export class Peek {
 		stage.lift.stop();
 		stage.reveal.stop();
 		this.finish();
+	}
+
+	/** Hides the trigger behind its copy. */
+	private cloak(trigger: HTMLElement): void {
+		trigger.style.visibility = "hidden";
+		trigger.style.opacity = this.opacity;
+	}
+
+	/** Still invisible, but a visibility: hidden element can't take focus back. */
+	private uncloak(): void {
+		if (!this.el) return;
+		this.el.style.visibility = this.visibility;
+		this.el.style.opacity = "0";
+	}
+
+	/** Only takes focus back if nothing else has claimed it in the meantime. */
+	private returnFocus = (): void => {
+		const active = document.activeElement;
+		const unclaimed =
+			!active || active === document.body || this.stage?.menu.contains(active);
+		if (unclaimed) this.el?.focus({ preventScroll: true });
+	};
+
+	private items(menu: HTMLElement): HTMLElement[] {
+		return [...menu.querySelectorAll<HTMLElement>(ITEM)];
 	}
 
 	private endDrag(): void {
@@ -304,6 +348,7 @@ export class Peek {
 		this.el?.removeEventListener("pointerdown", this.onPointerDown);
 		this.el?.removeEventListener("touchmove", this.onTouchMove);
 		this.el?.removeEventListener("contextmenu", this.onContextMenu);
+		this.el?.removeEventListener("keydown", this.onTriggerKeyDown);
 		this.el?.style.removeProperty("-webkit-touch-callout");
 		this.el = null;
 		this.disarmStrayClick();
@@ -362,6 +407,63 @@ export class Peek {
 		// that dismissed it could otherwise land on the page underneath.
 		this.armStrayClick(true);
 		this.close();
+		// A mouse press still moves focus to the overlay after this returns.
+		setTimeout(this.returnFocus);
+	};
+
+	private onTriggerKeyDown = (e: KeyboardEvent): void => {
+		// Keys pressed inside a link or field in the trigger stay theirs.
+		if (e.target !== this.el || e.repeat) return;
+		const opens =
+			e.key === "Enter" ||
+			e.key === " " ||
+			e.key === "ContextMenu" ||
+			(e.key === "F10" && e.shiftKey);
+		if (!opens) return;
+		e.preventDefault();
+		this.press.cancel();
+		this.show(true);
+	};
+
+	private onKeyDown = (e: KeyboardEvent): void => {
+		const menu = this.stage?.menu;
+		if (!menu) return;
+		const items = this.items(menu);
+		const count = items.length;
+		const at = items.indexOf(document.activeElement as HTMLElement);
+		const focus = (i: number) => items[i]?.focus({ preventScroll: true });
+
+		switch (e.key) {
+			case "Escape":
+				e.preventDefault();
+				this.close();
+				break;
+			case "Tab":
+				e.preventDefault();
+				break;
+			case "ArrowDown":
+				e.preventDefault();
+				focus((at + 1) % count);
+				break;
+			case "ArrowUp":
+				e.preventDefault();
+				focus(at < 0 ? count - 1 : (at - 1 + count) % count);
+				break;
+			case "Home":
+				e.preventDefault();
+				focus(0);
+				break;
+			case "End":
+				e.preventDefault();
+				focus(count - 1);
+				break;
+			case "Enter":
+			case " ":
+				e.preventDefault();
+				// A held key from opening the menu mustn't also pick from it.
+				if (!e.repeat && at >= 0) this.pick(items[at]);
+				break;
+		}
 	};
 
 	/** A pan that starts once the menu is up would end the drag with a cancel. */
