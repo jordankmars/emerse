@@ -1,8 +1,8 @@
 import { StrictMode, useEffect, useRef, useState } from "react";
 import { createPortal, flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
+import { configure, Peek } from "../src/core";
 import { Motion } from "../src/core/motion";
-import { Peek } from "../src/core/peek";
 import { Press } from "../src/core/press";
 
 // Everything the playground does lives in this file on purpose: it talks to the
@@ -61,6 +61,9 @@ h1, h2, p { margin: 0; }
 .corners .bubble, .scroller .bubble { display: block; }
 .scroller { height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 12px; background: var(--stage); border-radius: 10px; }
 .corners { position: relative; height: 240px; background: var(--stage); border-radius: 10px; }
+.controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; font-size: 13px; color: var(--muted); }
+.controls label { display: flex; gap: 6px; align-items: center; }
+.log { font-family: var(--mono); font-size: 11.5px; color: var(--muted); min-height: 150px; margin: 0; white-space: pre-wrap; }
 .pmenu { z-index: 62; width: 210px; background: var(--surface); border-radius: 14px; padding: 5px; display: grid; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2), 0 0 0 1px var(--line); }
 .pmenu button { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; border-radius: 9px; text-align: left; cursor: default; }
 .pmenu button span { font-family: var(--mono); font-size: 11px; color: var(--muted); }
@@ -130,6 +133,9 @@ function PressDemo() {
 	);
 }
 
+// Set once the app has mounted, so any bubble can write to the event log.
+let log: (line: string) => void = () => {};
+
 const ITEMS = [
 	["Reply", "↩"],
 	["Copy", "⌘C"],
@@ -158,7 +164,12 @@ function Bubble({
 			menu: () => menu.current,
 			commit: (next) => flushSync(() => setOpen(next)),
 			align: me ? "end" : "start",
-			onSelect: (item) => pick.current(item.dataset.emerseItem ?? ""),
+			onSelect: (item) => {
+				const label = item.dataset.emerseItem ?? "";
+				log(`select  ${label}`);
+				pick.current(label);
+			},
+			onPhase: (phase) => log(`phase   ${phase}`),
 		});
 		peek.attach();
 		return () => peek.destroy();
@@ -170,6 +181,7 @@ function Bubble({
 				ref={trigger}
 				type="button"
 				className={me ? "bubble me" : "bubble"}
+				onClick={() => log("click   the trigger")}
 			>
 				{text}
 			</button>
@@ -279,15 +291,74 @@ function CornersDemo() {
 	);
 }
 
+function Controls() {
+	const [speed, setSpeed] = useState(1);
+	const [motion, setMotion] = useState("system");
+
+	useEffect(() => {
+		configure({
+			speed,
+			reduced: motion === "system" ? null : motion === "reduced",
+		});
+	}, [speed, motion]);
+
+	return (
+		<section className="demo">
+			<div className="controls">
+				<label>
+					Speed
+					<select
+						value={speed}
+						onChange={(e) => setSpeed(Number(e.target.value))}
+					>
+						<option value={1}>1×</option>
+						<option value={0.5}>0.5×</option>
+						<option value={0.25}>0.25×</option>
+						<option value={0.1}>0.1×</option>
+					</select>
+				</label>
+				<label>
+					Motion
+					<select value={motion} onChange={(e) => setMotion(e.target.value)}>
+						<option value="system">System</option>
+						<option value="full">Full</option>
+						<option value="reduced">Reduced</option>
+					</select>
+				</label>
+			</div>
+		</section>
+	);
+}
+
+function EventLog() {
+	const [lines, setLines] = useState<string[]>([]);
+
+	useEffect(() => {
+		log = (line) => setLines((all) => [...all.slice(-7), line]);
+		return () => {
+			log = () => {};
+		};
+	}, []);
+
+	return (
+		<section className="demo">
+			<h2>Events</h2>
+			<pre className="log">{lines.join("\n")}</pre>
+		</section>
+	);
+}
+
 function App() {
 	return (
 		<main className="wrap">
 			<style>{css}</style>
 			<h1>emerse playground</h1>
+			<Controls />
 			<ChatDemo />
 			<ScrollDemo />
 			<CornersDemo />
 			<PressDemo />
+			<EventLog />
 		</main>
 	);
 }
