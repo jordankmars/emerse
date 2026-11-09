@@ -33,6 +33,9 @@ function pointer(
 		cancelable: true,
 		pointerId: 1,
 		button: 0,
+		width: 20,
+		height: 20,
+		pressure: 0.5,
 		...init,
 	});
 	target.dispatchEvent(e);
@@ -292,7 +295,7 @@ describe("telling a long press from other gestures", () => {
 		trigger.addEventListener("click", onClick);
 		pointer("pointerdown", trigger);
 		pointer("pointerup", trigger);
-		trigger.click();
+		trigger.dispatchEvent(new MouseEvent("click", { detail: 1 }));
 		expect(onClick).toHaveBeenCalledOnce();
 	});
 
@@ -666,5 +669,47 @@ describe("inert", () => {
 		pointer("pointermove", window);
 		pointer("pointerup", window);
 		expect(other.hasAttribute("inert")).toBe(false);
+	});
+});
+
+describe("screen readers", () => {
+	it("describes the trigger and the menu", () => {
+		const { trigger, menu, items } = setup();
+		expect(trigger.getAttribute("aria-haspopup")).toBe("menu");
+		expect(trigger.getAttribute("aria-expanded")).toBe("false");
+		hold(trigger);
+		expect(trigger.getAttribute("aria-expanded")).toBe("true");
+		expect(menu.getAttribute("role")).toBe("menu");
+		expect(items[0].getAttribute("role")).toBe("menuitem");
+		expect(items[0].getAttribute("tabindex")).toBe("-1");
+	});
+
+	it("opens on a virtual click, focused, and keeps it from the app", () => {
+		const { trigger, items } = setup();
+		const onClick = vi.fn();
+		trigger.addEventListener("click", onClick);
+		trigger.click();
+		expect(peek.phase).toBe("open");
+		expect(document.activeElement).toBe(items[0]);
+		expect(onClick).not.toHaveBeenCalled();
+	});
+
+	it("doesn't start a press from a stand-in pointer", () => {
+		const { trigger } = setup();
+		pointer("pointerdown", trigger, { width: 0, height: 0 });
+		vi.advanceTimersByTime(450);
+		expect(peek.phase).toBe("closed");
+	});
+
+	it("makes a plain element focusable and cleans up after itself", () => {
+		const div = document.createElement("div");
+		document.body.append(div);
+		const menu = document.createElement("div");
+		peek = new Peek({ trigger: () => div, menu: () => menu });
+		peek.attach();
+		expect(div.getAttribute("tabindex")).toBe("0");
+		peek.destroy();
+		expect(div.hasAttribute("tabindex")).toBe(false);
+		expect(div.hasAttribute("aria-haspopup")).toBe(false);
 	});
 });

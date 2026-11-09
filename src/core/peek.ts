@@ -5,6 +5,7 @@ import { lockScroll } from "./lock";
 import { Motion } from "./motion";
 import { placeMenu } from "./placement";
 import { Press } from "./press";
+import { isVirtualClick, isVirtualPointerDown } from "./virtual";
 
 // Press, lift and menu, separate from any framework. Elements are read through
 // getters because a framework may not have mounted them yet.
@@ -71,6 +72,7 @@ export class Peek {
 	private dragging = false;
 	private hot: HTMLElement | null = null;
 	private strayTimer = 0;
+	private addedTabIndex = false;
 	private unlock: (() => void) | null = null;
 	private uninert: (() => void) | null = null;
 	private visibility = "";
@@ -111,6 +113,11 @@ export class Peek {
 		el.addEventListener("touchmove", this.onTouchMove, { passive: false });
 		el.addEventListener("contextmenu", this.onContextMenu);
 		el.addEventListener("keydown", this.onTriggerKeyDown);
+		el.addEventListener("click", this.onTriggerClick, true);
+		el.setAttribute("aria-haspopup", "menu");
+		el.setAttribute("aria-expanded", "false");
+		this.addedTabIndex = el.tabIndex < 0;
+		if (this.addedTabIndex) el.tabIndex = 0;
 		el.style.setProperty("-webkit-touch-callout", "none");
 	}
 
@@ -126,6 +133,7 @@ export class Peek {
 		this.set("closing");
 		this.endDrag();
 		document.removeEventListener("keydown", this.onKeyDown, true);
+		this.el?.setAttribute("aria-expanded", "false");
 		this.releaseInert();
 		this.uncloak();
 		this.returnFocus();
@@ -156,7 +164,15 @@ export class Peek {
 		stage.reveal.onRest = done;
 		stage.reveal.set(1);
 		this.fade(stage, true);
-		if (this.el) this.cloak(this.el);
+		if (this.el) {
+			this.cloak(this.el);
+			this.el.setAttribute("aria-expanded", "true");
+		}
+		stage.menu.setAttribute("role", "menu");
+		for (const item of stage.menu.querySelectorAll("[data-emerse-item]")) {
+			item.setAttribute("role", "menuitem");
+			item.setAttribute("tabindex", "-1");
+		}
 		this.unlock ??= lockScroll(() => stage.menu);
 		this.applyInert();
 		// Capture, so the key press that opened the menu doesn't also reach it.
@@ -286,6 +302,7 @@ export class Peek {
 		if (this.el) {
 			this.el.style.visibility = this.visibility;
 			this.el.style.opacity = this.opacity;
+			this.el.setAttribute("aria-expanded", "false");
 		}
 		this.commit(false);
 		this.set("closed");
@@ -378,6 +395,10 @@ export class Peek {
 		this.el?.removeEventListener("touchmove", this.onTouchMove);
 		this.el?.removeEventListener("contextmenu", this.onContextMenu);
 		this.el?.removeEventListener("keydown", this.onTriggerKeyDown);
+		this.el?.removeEventListener("click", this.onTriggerClick, true);
+		this.el?.removeAttribute("aria-haspopup");
+		this.el?.removeAttribute("aria-expanded");
+		if (this.addedTabIndex) this.el?.removeAttribute("tabindex");
 		this.el?.style.removeProperty("-webkit-touch-callout");
 		this.el = null;
 		this.disarmStrayClick();
@@ -400,7 +421,7 @@ export class Peek {
 
 	private onPointerDown = (e: PointerEvent): void => {
 		// Ctrl+click is a right click on a Mac, and contextmenu handles those.
-		if (e.button !== 0 || e.ctrlKey) return;
+		if (e.button !== 0 || e.ctrlKey || isVirtualPointerDown(e)) return;
 		if (this.phase === "opening" || this.phase === "open") return;
 		if (!this.press.down(e.pointerId, e.clientX, e.clientY)) return;
 		this.pointerId = e.pointerId;
@@ -438,6 +459,14 @@ export class Peek {
 		this.close();
 		// A mouse press still moves focus to the overlay after this returns.
 		setTimeout(this.returnFocus);
+	};
+
+	/** Holding still isn't an option with a screen reader, so its tap opens it. */
+	private onTriggerClick = (e: MouseEvent): void => {
+		if (!isVirtualClick(e)) return;
+		e.preventDefault();
+		e.stopPropagation();
+		this.show(true);
 	};
 
 	private onTriggerKeyDown = (e: KeyboardEvent): void => {
