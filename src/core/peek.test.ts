@@ -245,7 +245,7 @@ describe("drag to select", () => {
 
 describe("telling a long press from other gestures", () => {
 	function touchMove(target: Element) {
-		const e = new Event("touchmove", { bubbles: true, cancelable: true });
+		const e = new Event("touchmove", { cancelable: true });
 		target.dispatchEvent(e);
 		return e;
 	}
@@ -410,7 +410,7 @@ describe("context menu", () => {
 		return e;
 	};
 	const touchMove = (target: Element) => {
-		const e = new Event("touchmove", { bubbles: true, cancelable: true });
+		const e = new Event("touchmove", { cancelable: true });
 		target.dispatchEvent(e);
 		return e;
 	};
@@ -595,5 +595,24 @@ describe("keyboard", () => {
 		(document.activeElement as HTMLElement | null)?.blur();
 		vi.advanceTimersByTime(0);
 		expect(document.activeElement).toBe(trigger);
+	});
+});
+
+describe("scroll lock", () => {
+	const html = document.documentElement;
+
+	it("locks the page while open and lets go as it closes", () => {
+		const { trigger } = setup();
+		hold(trigger);
+		expect(html.style.overflow).toBe("hidden");
+		peek.close();
+		expect(html.style.overflow).toBe("");
+	});
+
+	it("lets go when destroyed", () => {
+		const { trigger } = setup();
+		hold(trigger);
+		peek.destroy();
+		expect(html.style.overflow).toBe("");
 	});
 });

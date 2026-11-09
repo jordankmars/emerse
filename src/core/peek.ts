@@ -1,5 +1,6 @@
 import { cloneTrigger } from "./clone";
 import { config, isReduced } from "./config";
+import { lockScroll } from "./lock";
 import { Motion } from "./motion";
 import { placeMenu } from "./placement";
 import { Press } from "./press";
@@ -69,6 +70,7 @@ export class Peek {
 	private dragging = false;
 	private hot: HTMLElement | null = null;
 	private strayTimer = 0;
+	private unlock: (() => void) | null = null;
 	private visibility = "";
 	private opacity = "";
 	private press: Press;
@@ -125,6 +127,7 @@ export class Peek {
 		document.removeEventListener("keydown", this.onKeyDown, true);
 		this.uncloak();
 		this.returnFocus();
+		this.releaseScroll();
 		stage.overlay.style.pointerEvents = "none";
 		stage.menu.style.pointerEvents = "none";
 		const done = latch(3, () => this.finish());
@@ -151,6 +154,7 @@ export class Peek {
 		stage.reveal.set(1);
 		this.fade(stage, true);
 		if (this.el) this.cloak(this.el);
+		this.unlock ??= lockScroll(() => stage.menu);
 		// Capture, so the key press that opened the menu doesn't also reach it.
 		document.addEventListener("keydown", this.onKeyDown, true);
 		const first = focusFirst ? this.items(stage.menu)[0] : null;
@@ -258,6 +262,7 @@ export class Peek {
 		stage.clone.remove();
 		stage.menu.removeEventListener("click", this.onMenuClick);
 		stage.menu.removeEventListener("contextmenu", blockContextMenu);
+		this.releaseScroll();
 		const { style } = stage.menu;
 		for (const prop of [
 			"position",
@@ -292,6 +297,11 @@ export class Peek {
 		stage.lift.stop();
 		stage.reveal.stop();
 		this.finish();
+	}
+
+	private releaseScroll(): void {
+		this.unlock?.();
+		this.unlock = null;
 	}
 
 	/** Hides the trigger behind its copy. */
