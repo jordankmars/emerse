@@ -58,6 +58,9 @@ h1, h2, p { margin: 0; }
 .bubble.me { align-self: flex-end; background: var(--accent); color: #fff; }
 [data-emerse-overlay] { z-index: 60; background: var(--scrim); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
 [data-emerse-lifted] { z-index: 61; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18); }
+.corners .bubble, .scroller .bubble { display: block; }
+.scroller { height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 12px; background: var(--stage); border-radius: 10px; }
+.corners { position: relative; height: 240px; background: var(--stage); border-radius: 10px; }
 .pmenu { z-index: 62; width: 210px; background: var(--surface); border-radius: 14px; padding: 5px; display: grid; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2), 0 0 0 1px var(--line); }
 .pmenu button { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; border-radius: 9px; text-align: left; cursor: default; }
 .pmenu button span { font-family: var(--mono); font-size: 11px; color: var(--muted); }
@@ -220,12 +223,70 @@ function ChatDemo() {
 	);
 }
 
+const NOTES = Array.from({ length: 24 }, (_, i) => `Message number ${i + 1}`);
+
+function ScrollDemo() {
+	const [status, setStatus] = useState("Start a scroll on a message");
+	return (
+		<section className="demo">
+			<h2>Scroll or press</h2>
+			<p>
+				A finger that moves is scrolling. One that stays put opens the menu.
+				Text in these can be selected with a mouse by dragging.
+			</p>
+			<div className="scroller">
+				{NOTES.map((note, i) => (
+					<Bubble
+						key={note}
+						text={note}
+						me={i % 3 === 0}
+						onPick={(label) => setStatus(`${label}: ${note}`)}
+					/>
+				))}
+			</div>
+			<p className="note">{status}</p>
+		</section>
+	);
+}
+
+function CornersDemo() {
+	const [status, setStatus] = useState("Try each corner");
+	const onPick = (label: string) => setStatus(label);
+	return (
+		<section className="demo">
+			<h2>Placement</h2>
+			<p>
+				The menu goes below when there's room, above when there isn't, and stays
+				on screen sideways. Scroll one of these to the bottom of the window to
+				see it flip.
+			</p>
+			<div className="corners">
+				<div style={{ position: "absolute", top: 8, left: 8 }}>
+					<Bubble text="Top left" onPick={onPick} />
+				</div>
+				<div style={{ position: "absolute", top: 8, right: 8 }}>
+					<Bubble text="Top right" me onPick={onPick} />
+				</div>
+				<div style={{ position: "absolute", bottom: 8, left: 8 }}>
+					<Bubble text="Bottom left" onPick={onPick} />
+				</div>
+				<div style={{ position: "absolute", bottom: 8, right: 8 }}>
+					<Bubble text="Bottom right" me onPick={onPick} />
+				</div>
+			</div>
+			<p className="note">{status}</p>
+		</section>
+	);
+}
+
 function App() {
 	return (
 		<main className="wrap">
 			<style>{css}</style>
 			<h1>emerse playground</h1>
 			<ChatDemo />
+			<ScrollDemo />
+			<CornersDemo />
 			<PressDemo />
 		</main>
 	);
