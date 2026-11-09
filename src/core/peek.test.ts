@@ -616,3 +616,55 @@ describe("scroll lock", () => {
 		expect(html.style.overflow).toBe("");
 	});
 });
+
+describe("inert", () => {
+	function bystander() {
+		return document.body.appendChild(document.createElement("div"));
+	}
+
+	it("makes the page inert after a right click", () => {
+		const { trigger, menu } = setup();
+		const other = bystander();
+		trigger.dispatchEvent(new MouseEvent("contextmenu", { cancelable: true }));
+		expect(other.hasAttribute("inert")).toBe(true);
+		expect(menu.hasAttribute("inert")).toBe(false);
+		expect(overlay()?.hasAttribute("inert")).toBe(false);
+	});
+
+	it("waits for a drag to finish", () => {
+		const { trigger } = setup();
+		const other = bystander();
+		hold(trigger);
+		expect(other.hasAttribute("inert")).toBe(false);
+		pointer("pointerup", window);
+		expect(other.hasAttribute("inert")).toBe(true);
+	});
+
+	it("releases before focus goes back", () => {
+		const { trigger, items } = setup();
+		const other = bystander();
+		trigger.dispatchEvent(
+			new KeyboardEvent("keydown", { key: "Enter", cancelable: true }),
+		);
+		items[0].dispatchEvent(
+			new KeyboardEvent("keydown", {
+				key: "Escape",
+				bubbles: true,
+				cancelable: true,
+			}),
+		);
+		expect(other.hasAttribute("inert")).toBe(false);
+		expect(trigger.hasAttribute("inert")).toBe(false);
+		expect(document.activeElement).toBe(trigger);
+	});
+
+	it("is gone once a drag has picked an item", () => {
+		const { trigger, items } = setup();
+		const other = bystander();
+		hold(trigger);
+		document.elementFromPoint = () => items[0];
+		pointer("pointermove", window);
+		pointer("pointerup", window);
+		expect(other.hasAttribute("inert")).toBe(false);
+	});
+});

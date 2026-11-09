@@ -1,5 +1,6 @@
 import { cloneTrigger } from "./clone";
 import { config, isReduced } from "./config";
+import { inertOthers } from "./inert";
 import { lockScroll } from "./lock";
 import { Motion } from "./motion";
 import { placeMenu } from "./placement";
@@ -71,6 +72,7 @@ export class Peek {
 	private hot: HTMLElement | null = null;
 	private strayTimer = 0;
 	private unlock: (() => void) | null = null;
+	private uninert: (() => void) | null = null;
 	private visibility = "";
 	private opacity = "";
 	private press: Press;
@@ -88,9 +90,8 @@ export class Peek {
 					this.squeeze.set(1);
 					return;
 				}
-				this.show();
+				this.show(false, true);
 				if (this.phase === "closed") this.unlisten();
-				else this.dragging = true;
 			},
 			onCancel: () => {
 				this.unlisten();
@@ -122,9 +123,10 @@ export class Peek {
 	close(): void {
 		const { stage } = this;
 		if (!stage || this.phase === "closing") return;
-		this.endDrag();
 		this.set("closing");
+		this.endDrag();
 		document.removeEventListener("keydown", this.onKeyDown, true);
+		this.releaseInert();
 		this.uncloak();
 		this.returnFocus();
 		this.releaseScroll();
@@ -138,7 +140,7 @@ export class Peek {
 		this.fade(stage, false, done);
 	}
 
-	private show(focusFirst = false): void {
+	private show(focusFirst = false, dragging = false): void {
 		if (this.phase === "opening" || this.phase === "open") return;
 		const from = this.squeeze.x;
 		this.squeeze.jump(1);
@@ -147,6 +149,7 @@ export class Peek {
 		stage.overlay.style.pointerEvents = "";
 		stage.menu.style.pointerEvents = "";
 		this.set("opening");
+		this.dragging = dragging;
 		const done = latch(2, () => this.set("open"));
 		stage.lift.onRest = done;
 		stage.lift.set(LIFTED_SCALE);
@@ -155,6 +158,7 @@ export class Peek {
 		this.fade(stage, true);
 		if (this.el) this.cloak(this.el);
 		this.unlock ??= lockScroll(() => stage.menu);
+		this.applyInert();
 		// Capture, so the key press that opened the menu doesn't also reach it.
 		document.addEventListener("keydown", this.onKeyDown, true);
 		const first = focusFirst ? this.items(stage.menu)[0] : null;
@@ -263,6 +267,7 @@ export class Peek {
 		stage.menu.removeEventListener("click", this.onMenuClick);
 		stage.menu.removeEventListener("contextmenu", blockContextMenu);
 		this.releaseScroll();
+		this.releaseInert();
 		const { style } = stage.menu;
 		for (const prop of [
 			"position",
@@ -297,6 +302,19 @@ export class Peek {
 		stage.lift.stop();
 		stage.reveal.stop();
 		this.finish();
+	}
+
+	/** Waits for a drag to end, so the finger's touch stream is left alone. */
+	private applyInert(): void {
+		const { stage } = this;
+		if (!stage || this.uninert || this.dragging) return;
+		if (this.phase !== "opening" && this.phase !== "open") return;
+		this.uninert = inertOthers([stage.menu, stage.overlay, stage.clone]);
+	}
+
+	private releaseInert(): void {
+		this.uninert?.();
+		this.uninert = null;
 	}
 
 	private releaseScroll(): void {
@@ -334,6 +352,7 @@ export class Peek {
 		this.dragging = false;
 		this.unlisten();
 		this.highlight(null);
+		this.applyInert();
 	}
 
 	private highlight(item: HTMLElement | null): void {
