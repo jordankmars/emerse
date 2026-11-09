@@ -20,6 +20,12 @@ export interface PeekOptions {
 	 * Without it the menu's `hidden` attribute is toggled instead.
 	 */
 	commit?: (open: boolean) => void;
+	/**
+	 * An element to use as the overlay instead of a generated one. Read after
+	 * `commit(true)`, and must share a parent with the menu. It's left mounted
+	 * on close, for whoever rendered it to remove.
+	 */
+	overlay?: () => HTMLElement | null;
 	/** Where the overlay and the lifted copy go. Defaults to the body. */
 	container?: () => Element | null;
 	/** Builds the lifted copy, for triggers a plain clone can't reproduce. */
@@ -46,6 +52,8 @@ const LIFTED_SCALE = 1.04;
 /** Everything that exists only while the menu is up. */
 interface Stage {
 	overlay: HTMLElement;
+	/** The overlay came from `options.overlay`, so it isn't ours to remove. */
+	adopted: boolean;
 	clone: HTMLElement;
 	menu: HTMLElement;
 	lift: Motion;
@@ -219,7 +227,8 @@ export class Peek {
 			return null;
 		}
 
-		const overlay = document.createElement("div");
+		const given = this.options.overlay?.() ?? null;
+		const overlay = given ?? document.createElement("div");
 		overlay.dataset.emerseOverlay = "";
 		Object.assign(overlay.style, {
 			position: "fixed",
@@ -252,7 +261,7 @@ export class Peek {
 		};
 		const reveal = new Motion(0, REVEAL, applyReveal);
 
-		const stage = { overlay, clone, menu, lift, reveal };
+		const stage = { overlay, adopted: !!given, clone, menu, lift, reveal };
 		this.stage = stage;
 		const target = this.options.container?.() ?? document.body;
 		// Fixed elements paint in tree order, and the menu is already mounted. A
@@ -309,7 +318,8 @@ export class Peek {
 		const { stage } = this;
 		if (!stage) return;
 		this.stage = null;
-		stage.overlay.remove();
+		if (stage.adopted) this.release(stage.overlay);
+		else stage.overlay.remove();
 		stage.clone.remove();
 		stage.menu.removeEventListener("click", this.onMenuClick);
 		stage.menu.removeEventListener("contextmenu", blockContextMenu);
@@ -338,6 +348,21 @@ export class Peek {
 		}
 		this.commit(false);
 		this.set("closed");
+	}
+
+	/** Hands a borrowed overlay back the way it arrived. */
+	private release(overlay: HTMLElement): void {
+		overlay.removeEventListener("pointerdown", this.onOverlayDown);
+		overlay.removeEventListener("contextmenu", blockContextMenu);
+		for (const prop of [
+			"position",
+			"inset",
+			"opacity",
+			"transition",
+			"pointer-events",
+		]) {
+			overlay.style.removeProperty(prop);
+		}
 	}
 
 	/** Drops straight to closed, without animating. */

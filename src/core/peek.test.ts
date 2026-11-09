@@ -858,6 +858,80 @@ describe("for adapters", () => {
 		expect(lifted()?.parentElement).toBe(host);
 	});
 
+	describe("with a given overlay", () => {
+		function given() {
+			const el = document.createElement("div");
+			document.body.append(el);
+			return el;
+		}
+
+		it("uses it instead of building one", () => {
+			const el = given();
+			setup({ overlay: () => el });
+			peek.open();
+			expect(overlay()).toBe(el);
+			expect(document.querySelectorAll("[data-emerse-overlay]")).toHaveLength(
+				1,
+			);
+			expect(el.style.position).toBe("fixed");
+		});
+
+		it("paints it beneath the copy and the menu", () => {
+			const el = given();
+			const { menu } = setup({ overlay: () => el });
+			peek.open();
+			expect(el.nextElementSibling).toBe(lifted());
+			expect(lifted()?.nextElementSibling).toBe(menu);
+		});
+
+		it("leaves it mounted and clean after closing", () => {
+			const el = given();
+			el.style.background = "red";
+			setup({ overlay: () => el });
+			peek.open();
+			peek.close();
+			vi.advanceTimersByTime(1);
+			expect(peek.phase).toBe("closed");
+			expect(el.isConnected).toBe(true);
+			expect(el.style.position).toBe("");
+			expect(el.style.opacity).toBe("");
+			expect(el.style.pointerEvents).toBe("");
+			expect(el.style.background).toBe("red");
+		});
+
+		it("still dismisses from it", () => {
+			const el = given();
+			setup({ overlay: () => el });
+			peek.open();
+			pointer("pointerdown", el);
+			vi.advanceTimersByTime(1);
+			expect(peek.phase).toBe("closed");
+		});
+
+		it("stops listening to it once closed", () => {
+			const el = given();
+			const onPhase = vi.fn();
+			setup({ overlay: () => el, onPhase });
+			peek.open();
+			peek.close();
+			vi.advanceTimersByTime(1);
+			onPhase.mockClear();
+			pointer("pointerdown", el);
+			vi.advanceTimersByTime(1);
+			expect(onPhase).not.toHaveBeenCalled();
+		});
+
+		it("builds its own when the getter comes back empty", () => {
+			setup({ overlay: () => null });
+			peek.open();
+			const own = overlay();
+			expect(own).not.toBeNull();
+			peek.close();
+			vi.advanceTimersByTime(1);
+			expect(own?.isConnected).toBe(false);
+		});
+	});
+
 	it("uses a custom copy", () => {
 		const custom = document.createElement("canvas");
 		setup({ clone: () => custom });
