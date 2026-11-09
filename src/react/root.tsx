@@ -13,12 +13,14 @@ import { type Bridge, EmerseContext } from "./context";
 export interface RootProps {
 	/** Told when the menu starts opening and when it starts closing. */
 	onOpenChange?: (open: boolean) => void;
+	/** Told once the close has finished. Remove the item from here, if you're going to. */
+	onClosed?: () => void;
 	/** Where the menu, overlay and lifted copy go. Defaults to the body. */
 	container?: Element | null;
 	children?: ReactNode;
 }
 
-type Latest = Pick<RootProps, "onOpenChange" | "container">;
+type Latest = Pick<RootProps, "onOpenChange" | "onClosed" | "container">;
 
 function createBridge(
 	setOpen: (open: boolean) => void,
@@ -45,9 +47,11 @@ function createBridge(
 		onSelect: (item) => handlers.get(item)?.(),
 		onPhase: (phase) => {
 			const open = phase === "opening" || phase === "open";
-			if (open === announced) return;
-			announced = open;
-			latest.current.onOpenChange?.(open);
+			if (open !== announced) {
+				announced = open;
+				latest.current.onOpenChange?.(open);
+			}
+			if (phase === "closed") latest.current.onClosed?.();
 		},
 	});
 
@@ -69,11 +73,16 @@ function createBridge(
 	};
 }
 
-export function Root({ onOpenChange, container, children }: RootProps) {
+export function Root({
+	onOpenChange,
+	onClosed,
+	container,
+	children,
+}: RootProps) {
 	const [open, setOpen] = useState(false);
-	const latest = useRef<Latest>({ onOpenChange, container });
+	const latest = useRef<Latest>({ onOpenChange, onClosed, container });
 	useEffect(() => {
-		latest.current = { onOpenChange, container };
+		latest.current = { onOpenChange, onClosed, container };
 	});
 	const [bridge] = useState(() => createBridge(setOpen, latest));
 	const value = useMemo(() => ({ ...bridge, open }), [bridge, open]);

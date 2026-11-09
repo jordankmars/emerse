@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, type ReactNode, StrictMode, useState } from "react";
+import { act, type ReactNode, StrictMode, useRef, useState } from "react";
 import { createRoot, type Root as ReactRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -94,6 +94,16 @@ function example(
 function Thread() {
 	const [gone, setGone] = useState(false);
 	return gone ? null : example({}, () => setGone(true));
+}
+
+/** The same, but it lets the menu finish closing first. */
+function DeferredThread() {
+	const [gone, setGone] = useState(false);
+	const deleting = useRef(false);
+	if (gone) return null;
+	return example({ onClosed: () => deleting.current && setGone(true) }, () => {
+		deleting.current = true;
+	});
 }
 
 beforeEach(() => {
@@ -397,6 +407,48 @@ describe("Item", () => {
 		rightClick();
 		act(() => items()[0].click());
 		settle();
+		expect(menu()).toBeNull();
+		expect(document.querySelector("[data-emerse-overlay]")).toBeNull();
+		expect(document.querySelector("[data-emerse-lifted]")).toBeNull();
+		expect(document.documentElement.style.overflow).toBe("");
+	});
+});
+
+describe("onClosed", () => {
+	it("waits for the close to finish, and fires once", () => {
+		const onClosed = vi.fn();
+		render(example({ onClosed }));
+		rightClick();
+		expect(onClosed).not.toHaveBeenCalled();
+		act(() => items()[0].click());
+		expect(onClosed).not.toHaveBeenCalled();
+		settle();
+		expect(onClosed).toHaveBeenCalledOnce();
+		expect(menu()).toBeNull();
+	});
+
+	it("fires when another menu takes over", () => {
+		const onClosed = vi.fn();
+		render(
+			<>
+				{example({ onClosed })}
+				{example()}
+			</>,
+		);
+		rightClick(triggers()[0]);
+		rightClick(triggers()[1]);
+		expect(onClosed).toHaveBeenCalledOnce();
+	});
+
+	it("can remove the Root without cutting the close short", () => {
+		render(<DeferredThread />);
+		rightClick();
+		const el = menu();
+		act(() => items()[0].click());
+		expect(menu()).toBe(el);
+		expect(document.querySelector("[data-emerse-lifted]")).not.toBeNull();
+		settle();
+		expect(document.body.textContent).not.toContain("Message");
 		expect(menu()).toBeNull();
 		expect(document.querySelector("[data-emerse-overlay]")).toBeNull();
 		expect(document.querySelector("[data-emerse-lifted]")).toBeNull();
