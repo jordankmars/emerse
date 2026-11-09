@@ -858,6 +858,153 @@ describe("for adapters", () => {
 		expect(lifted()?.parentElement).toBe(host);
 	});
 
+	describe("following links", () => {
+		function withLink(options: Partial<PeekOptions> = {}) {
+			const parts = setup(options);
+			const link = document.createElement("a");
+			link.href = "#thread";
+			link.dataset.emerseItem = "link";
+			parts.menu.append(link);
+			const clicks: boolean[] = [];
+			link.addEventListener("click", (e) => {
+				clicks.push(e.defaultPrevented);
+				e.preventDefault();
+			});
+			return { ...parts, link, clicks };
+		}
+
+		function dragOnto(trigger: Element, item: HTMLElement) {
+			hold(trigger);
+			document.elementFromPoint = () => item;
+			pointer("pointermove", window);
+			pointer("pointerup", window);
+		}
+
+		function pressEnter(item: HTMLElement) {
+			item.focus();
+			item.dispatchEvent(
+				new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+			);
+		}
+
+		it("clicks a link released on, past the stray click guard", () => {
+			const onSelect = vi.fn();
+			const { trigger, link, clicks } = withLink({ onSelect });
+			dragOnto(trigger, link);
+			expect(clicks).toEqual([false]);
+			expect(onSelect).toHaveBeenCalledOnce();
+		});
+
+		it("clicks a link picked from the keyboard", () => {
+			const onSelect = vi.fn();
+			const { link, clicks } = withLink({ onSelect });
+			peek.open();
+			pressEnter(link);
+			expect(clicks).toEqual([false]);
+			expect(onSelect).toHaveBeenCalledOnce();
+		});
+
+		it("leaves a tap to the browser", () => {
+			const onSelect = vi.fn();
+			const { link, clicks } = withLink({ onSelect });
+			peek.open();
+			link.click();
+			expect(clicks).toEqual([false]);
+			expect(onSelect).toHaveBeenCalledOnce();
+		});
+
+		it("doesn't click anything that isn't a link", () => {
+			const { trigger, items } = setup();
+			const onClick = vi.fn();
+			items[0].addEventListener("click", onClick);
+			dragOnto(trigger, items[0]);
+			expect(onClick).not.toHaveBeenCalled();
+		});
+
+		it("still swallows the click that follows the release", () => {
+			const { trigger, link, items } = withLink();
+			dragOnto(trigger, link);
+			const onClick = vi.fn();
+			items[0].addEventListener("click", onClick);
+			items[0].click();
+			expect(onClick).not.toHaveBeenCalled();
+		});
+	});
+
+	describe("with a given overlay", () => {
+		function given() {
+			const el = document.createElement("div");
+			document.body.append(el);
+			return el;
+		}
+
+		it("uses it instead of building one", () => {
+			const el = given();
+			setup({ overlay: () => el });
+			peek.open();
+			expect(overlay()).toBe(el);
+			expect(document.querySelectorAll("[data-emerse-overlay]")).toHaveLength(
+				1,
+			);
+			expect(el.style.position).toBe("fixed");
+		});
+
+		it("paints it beneath the copy and the menu", () => {
+			const el = given();
+			const { menu } = setup({ overlay: () => el });
+			peek.open();
+			expect(el.nextElementSibling).toBe(lifted());
+			expect(lifted()?.nextElementSibling).toBe(menu);
+		});
+
+		it("leaves it mounted and clean after closing", () => {
+			const el = given();
+			el.style.background = "red";
+			setup({ overlay: () => el });
+			peek.open();
+			peek.close();
+			vi.advanceTimersByTime(1);
+			expect(peek.phase).toBe("closed");
+			expect(el.isConnected).toBe(true);
+			expect(el.style.position).toBe("");
+			expect(el.style.opacity).toBe("");
+			expect(el.style.pointerEvents).toBe("");
+			expect(el.style.background).toBe("red");
+		});
+
+		it("still dismisses from it", () => {
+			const el = given();
+			setup({ overlay: () => el });
+			peek.open();
+			pointer("pointerdown", el);
+			vi.advanceTimersByTime(1);
+			expect(peek.phase).toBe("closed");
+		});
+
+		it("stops listening to it once closed", () => {
+			const el = given();
+			const onPhase = vi.fn();
+			setup({ overlay: () => el, onPhase });
+			peek.open();
+			peek.close();
+			vi.advanceTimersByTime(1);
+			onPhase.mockClear();
+			pointer("pointerdown", el);
+			vi.advanceTimersByTime(1);
+			expect(onPhase).not.toHaveBeenCalled();
+		});
+
+		it("builds its own when the getter comes back empty", () => {
+			setup({ overlay: () => null });
+			peek.open();
+			const own = overlay();
+			expect(own).not.toBeNull();
+			peek.close();
+			vi.advanceTimersByTime(1);
+			expect(own?.isConnected).toBe(false);
+		});
+	});
+
 	it("uses a custom copy", () => {
 		const custom = document.createElement("canvas");
 		setup({ clone: () => custom });
