@@ -1,7 +1,7 @@
 {
 	"name": "emerse",
 	"version": "0.0.0",
-	"description": "",
+	"description": "Press and hold an item to lift it above a blurred page, with a menu next to it.",
 	"keywords": [
 		"react"
 	],
