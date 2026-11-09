@@ -134,10 +134,20 @@ const ITEMS = [
 	["Forward", "→"],
 ];
 
-function Bubble({ text, me = false }: { text: string; me?: boolean }) {
+function Bubble({
+	text,
+	me = false,
+	onPick,
+}: {
+	text: string;
+	me?: boolean;
+	onPick: (label: string) => void;
+}) {
 	const trigger = useRef<HTMLButtonElement>(null);
 	const menu = useRef<HTMLDivElement>(null);
 	const [open, setOpen] = useState(false);
+	const pick = useRef(onPick);
+	pick.current = onPick;
 
 	useEffect(() => {
 		const peek = new Peek({
@@ -145,6 +155,7 @@ function Bubble({ text, me = false }: { text: string; me?: boolean }) {
 			menu: () => menu.current,
 			commit: (next) => flushSync(() => setOpen(next)),
 			align: me ? "end" : "start",
+			onSelect: (item) => pick.current(item.dataset.emerseItem ?? ""),
 		});
 		peek.attach();
 		return () => peek.destroy();
@@ -176,16 +187,34 @@ function Bubble({ text, me = false }: { text: string; me?: boolean }) {
 }
 
 function ChatDemo() {
+	const [status, setStatus] = useState("Hold for half a second");
+	const onPick = (label: string) =>
+		setStatus(
+			{
+				Reply: "Replying",
+				Copy: "Copied to clipboard",
+				Pin: "Pinned to the top",
+				Forward: "Pick someone to forward to",
+			}[label] ?? label,
+		);
+
 	return (
 		<section className="demo">
 			<h2>Peek menu</h2>
-			<p>Press and hold a message.</p>
-			<div className="stage">
+			<p>
+				Press and hold a message. Keep your finger down and slide onto an option
+				to pick it in one motion.
+			</p>
+			<div className="stage column">
 				<div className="chat">
-					<Bubble text="Are we still on for dinner?" />
-					<Bubble text="Yes! See you at 7?" me />
-					<Bubble text="Perfect. I'll book the table by the window." />
+					<Bubble text="Are we still on for dinner?" onPick={onPick} />
+					<Bubble text="Yes! See you at 7?" me onPick={onPick} />
+					<Bubble
+						text="Perfect. I'll book the table by the window."
+						onPick={onPick}
+					/>
 				</div>
+				<p className="note">{status}</p>
 			</div>
 		</section>
 	);
