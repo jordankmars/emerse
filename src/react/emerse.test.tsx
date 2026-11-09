@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { configure } from "../core";
 import { Item } from "./item";
 import { Menu } from "./menu";
+import { Overlay } from "./overlay";
 import { Root, type RootProps } from "./root";
 import { Trigger } from "./trigger";
 
@@ -359,6 +360,75 @@ describe("Item", () => {
 		expect(document.querySelector("[data-emerse-overlay]")).toBeNull();
 		expect(document.querySelector("[data-emerse-lifted]")).toBeNull();
 		expect(document.documentElement.style.overflow).toBe("");
+	});
+});
+
+describe("Overlay", () => {
+	const overlays = () => [
+		...document.querySelectorAll<HTMLElement>("[data-emerse-overlay]"),
+	];
+
+	function withOverlay() {
+		return (
+			<Root>
+				<Trigger>Message</Trigger>
+				<Menu>
+					<Item>Reply</Item>
+				</Menu>
+				<Overlay className="scrim" id="mine" />
+			</Root>
+		);
+	}
+
+	it("is absent until the menu opens", () => {
+		render(withOverlay());
+		expect(document.getElementById("mine")).toBeNull();
+	});
+
+	it("becomes the overlay, beneath the copy and the menu", () => {
+		render(withOverlay());
+		rightClick();
+		const [overlay] = overlays();
+		expect(overlays()).toHaveLength(1);
+		expect(overlay.id).toBe("mine");
+		expect(overlay.className).toBe("scrim");
+		expect(overlay.nextElementSibling?.hasAttribute("data-emerse-lifted")).toBe(
+			true,
+		);
+		expect(overlay.nextElementSibling?.nextElementSibling).toBe(menu());
+	});
+
+	it("adds no look of its own", () => {
+		render(withOverlay());
+		rightClick();
+		const { style } = overlays()[0];
+		expect(style.background).toBe("");
+		expect(style.getPropertyValue("backdrop-filter")).toBe("");
+		expect(style.zIndex).toBe("");
+	});
+
+	it("dismisses, then unmounts", () => {
+		render(withOverlay());
+		rightClick();
+		act(() => pointer("pointerdown", overlays()[0]));
+		settle();
+		expect(menu()).toBeNull();
+		expect(overlays()).toHaveLength(0);
+	});
+
+	it("is replaced by a bare layer when left out", () => {
+		render(example());
+		rightClick();
+		expect(overlays()).toHaveLength(1);
+		expect(overlays()[0].className).toBe("");
+	});
+
+	it("doesn't send presses to the React parent", () => {
+		const onPointerDown = vi.fn();
+		render(<div onPointerDown={onPointerDown}>{withOverlay()}</div>);
+		rightClick();
+		act(() => pointer("pointerdown", overlays()[0]));
+		expect(onPointerDown).not.toHaveBeenCalled();
 	});
 });
 
