@@ -1,12 +1,12 @@
 import { StrictMode, useEffect, useRef, useState } from "react";
-import { createPortal, flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
-import { configure, Peek } from "../src/core";
+import { configure } from "../src/core";
 import { Motion } from "../src/core/motion";
 import { Press } from "../src/core/press";
+import { Emerse } from "../src/react";
 
-// Everything the playground does lives in this file on purpose: it talks to the
-// core directly, so the core can be tried out before there's a React adapter.
+// Everything the playground does lives in this file on purpose. The menus use
+// the React adapter; the press demo and the motion controls talk to the core.
 
 const css = `
 :root {
@@ -152,52 +152,35 @@ function Bubble({
 	me?: boolean;
 	onPick: (label: string) => void;
 }) {
-	const trigger = useRef<HTMLButtonElement>(null);
-	const menu = useRef<HTMLDivElement>(null);
-	const [open, setOpen] = useState(false);
-	const pick = useRef(onPick);
-	pick.current = onPick;
-
-	useEffect(() => {
-		const peek = new Peek({
-			trigger: () => trigger.current,
-			menu: () => menu.current,
-			commit: (next) => flushSync(() => setOpen(next)),
-			align: me ? "end" : "start",
-			onSelect: (item) => {
-				const label = item.dataset.emerseItem ?? "";
-				log(`select  ${label}`);
-				pick.current(label);
-			},
-			onPhase: (phase) => log(`phase   ${phase}`),
-		});
-		peek.attach();
-		return () => peek.destroy();
-	}, [me]);
-
 	return (
-		<>
-			<button
-				ref={trigger}
-				type="button"
-				className={me ? "bubble me" : "bubble"}
-				onClick={() => log("click   the trigger")}
-			>
-				{text}
-			</button>
-			{open &&
-				createPortal(
-					<div ref={menu} className="pmenu">
-						{ITEMS.map(([label, hint]) => (
-							<button key={label} type="button" data-emerse-item={label}>
-								{label}
-								<span>{hint}</span>
-							</button>
-						))}
-					</div>,
-					document.body,
-				)}
-		</>
+		<Emerse.Root
+			onOpenChange={(open) => log(`menu    ${open ? "opening" : "closing"}`)}
+		>
+			<Emerse.Trigger asChild>
+				<button
+					type="button"
+					className={me ? "bubble me" : "bubble"}
+					onClick={() => log("click   the trigger")}
+				>
+					{text}
+				</button>
+			</Emerse.Trigger>
+			<Emerse.Overlay />
+			<Emerse.Menu className="pmenu" align={me ? "end" : "start"}>
+				{ITEMS.map(([label, hint]) => (
+					<Emerse.Item
+						key={label}
+						onSelect={() => {
+							log(`select  ${label}`);
+							onPick(label);
+						}}
+					>
+						{label}
+						<span>{hint}</span>
+					</Emerse.Item>
+				))}
+			</Emerse.Menu>
+		</Emerse.Root>
 	);
 }
 
