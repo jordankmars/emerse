@@ -1,7 +1,7 @@
 {
 	"name": "emerse",
 	"version": "0.0.0",
-	"description": "",
+	"description": "Press and hold an item to lift it above a blurred page, with a menu next to it.",
 	"keywords": [
 		"react"
 	],
@@ -31,6 +31,8 @@
 		"build": "tsdown",
 		"dev": "tsdown --watch",
 		"typecheck": "tsc --noEmit",
+		"test": "vitest run",
+		"playground": "vite playground",
 		"prepack": "pnpm build",
 		"lint": "biome check .",
 		"format": "biome check --write ."
@@ -51,9 +53,15 @@
 		"@arethetypeswrong/core": "^0.18.5",
 		"@biomejs/biome": "2.6.6",
 		"@types/react": "^19.3.0",
+		"@types/react-dom": "^19.3.0",
+		"@vitejs/plugin-react": "^6.2.1",
+		"jsdom": "^31.0.0",
 		"publint": "^0.3.25",
 		"react": "^19.3.1",
+		"react-dom": "^19.3.1",
 		"tsdown": "^0.23.7",
-		"typescript": "^7.0.2"
+		"typescript": "^7.0.2",
+		"vite": "^8.3.6",
+		"vitest": "^5.1.0"
 	}
 }
