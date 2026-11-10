@@ -1,0 +1,20 @@
+export const metadata = { title: "Hello World" };
+
+# Hello World
+
+Welcome to the emerse docs. emerse lets you press and hold an item to lift it above a blurred page, with a menu next to it. Keep your finger down and slide onto an option to pick it in one motion, or let go and tap through the menu afterward.
+
+There's more to come. For now, here's the smallest one you can make:
+
+```tsx
+import { Emerse } from "emerse/react";
+
+<Emerse.Root>
+	<Emerse.Trigger>…message…</Emerse.Trigger>
+	<Emerse.Overlay />
+	<Emerse.Menu>
+		<Emerse.Item onSelect={reply}>Reply</Emerse.Item>
+		<Emerse.Item onSelect={copy}>Copy</Emerse.Item>
+	</Emerse.Menu>
+</Emerse.Root>;
+```
