@@ -121,6 +121,8 @@ pnpm install
 pnpm test               # unit tests
 pnpm playground         # playground at localhost:5173
 pnpm playground --host  # same, reachable from a phone on your network
+pnpm site:dev           # docs site, builds the library first
+pnpm site:build         # static docs site in site/out
 ```
 
 The playground uses the React adapter, all in one file. Long presses behave
