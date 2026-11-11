@@ -1,0 +1,95 @@
+export const metadata = { title: "API" };
+
+# API
+
+<Lead>The parts of emerse and the props they take.</Lead>
+
+## Anatomy
+
+Import `Emerse` and put the parts together.
+
+```tsx
+import { Emerse } from "emerse/react";
+
+<Emerse.Root>
+	<Emerse.Trigger />
+	<Emerse.Overlay />
+	<Emerse.Menu>
+		<Emerse.Item />
+	</Emerse.Menu>
+</Emerse.Root>;
+```
+
+Every part that renders an element takes that element's usual props and a ref.
+
+## Components
+
+### Root
+
+Holds the state. It renders nothing of its own.
+
+| Prop | Type | Default |
+| --- | --- | --- |
+| `onOpenChange` | `(open: boolean) => void` | - |
+| `onClosed` | `() => void` | - |
+| `container` | `Element \| null` | `document.body` |
+
+`onOpenChange` is called when the menu starts opening and when it starts closing. `onClosed` is called once it has finished closing.
+
+### Trigger
+
+The element you press. Renders a `div` with a button role, and takes div props.
+
+| Prop | Type | Default |
+| --- | --- | --- |
+| `asChild` | `boolean` | `false` |
+| `clone` | `(trigger: HTMLElement) => HTMLElement` | - |
+
+`asChild` puts the behaviour on your own element. `clone` builds the lifted copy yourself, for content a plain copy can't reproduce.
+
+### Overlay
+
+The layer behind the lifted copy, rendered while the menu is up. Takes div props. It's optional: without it, outside taps still dismiss the menu but nothing is painted.
+
+### Menu
+
+The list of items, rendered while the menu is up. Takes div props.
+
+| Prop | Type | Default |
+| --- | --- | --- |
+| `align` | `"start" \| "end"` | `"start"` |
+
+`align` sets which edge of the trigger the menu lines up with. See [Placement](/docs/placement).
+
+### Item
+
+An option in the menu. Renders a `button`, and takes button props.
+
+| Prop | Type | Default |
+| --- | --- | --- |
+| `onSelect` | `() => void` | - |
+| `disabled` | `boolean` | `false` |
+| `asChild` | `boolean` | `false` |
+
+`onSelect` runs however the item is picked, by drag, tap or keyboard. With `asChild`, a link still navigates.
+
+```tsx
+<Emerse.Item asChild>
+	<a href="/thread">Open thread</a>
+</Emerse.Item>
+```
+
+## Data attributes
+
+| Selector | What it is |
+| --- | --- |
+| `[data-emerse-overlay]` | The overlay, including the one you don't render |
+| `[data-emerse-lifted]` | The lifted copy of the trigger |
+| `[data-highlighted]` | The item under a drag |
+
+## Good to know
+
+- Only one menu is ever up. Opening another closes the last one straight away.
+- Unmounting the Root ends the close animation on the spot. See [Removing an item](/docs/examples#removing-an-item).
+- Events inside the menu don't reach React parents, so a pick won't fire the `onClick` of the row around it.
+- With reduced motion, the springs are skipped.
