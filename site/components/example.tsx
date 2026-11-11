@@ -2,7 +2,10 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { highlight } from "@/lib/highlight";
 import { ExampleTabs } from "./example-tabs";
+import { LinkRows } from "./examples/link-rows";
 import { MessageBubbles } from "./examples/message-bubbles";
+import { PhotoTile } from "./examples/photo-tile";
+import { RemoveItem } from "./examples/remove-item";
 import { ScrollOrPress } from "./examples/scroll-or-press";
 import { StyleBrutalist } from "./examples/style-brutalist";
 import { StyleGlass } from "./examples/style-glass";
@@ -11,6 +14,9 @@ import { StyleSoft } from "./examples/style-soft";
 import { StyleTerminal } from "./examples/style-terminal";
 
 const DEMOS = {
+	"remove-item": RemoveItem,
+	"link-rows": LinkRows,
+	"photo-tile": PhotoTile,
 	"style-soft": StyleSoft,
 	"style-terminal": StyleTerminal,
 	"style-brutalist": StyleBrutalist,
