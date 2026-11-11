@@ -1,20 +1,67 @@
-export const metadata = { title: "Hello World" };
+import { Example } from "@/components/example";
 
-# Hello World
+export const metadata = { title: "Getting Started" };
 
-Welcome to the emerse docs. emerse lets you press and hold an item to lift it above a blurred page, with a menu next to it. Keep your finger down and slide onto an option to pick it in one motion, or let go and tap through the menu afterward.
+# Getting Started
 
-There's more to come. For now, here's the smallest one you can make:
+<Lead>A menu that lifts what you press above the page.</Lead>
+
+Press and hold an item to lift it above a blurred page, with a menu next to it. Keep your finger down and slide onto an option to pick it in one motion, or let go and tap through the menu afterward. Right-click and the keyboard open it too.
+
+<Example name="message-bubbles" />
+
+## Installation
+
+Install the package from your command line.
+
+<Install />
+
+## Create an Emerse
+
+Compose the parts. The menu stays out of the page until a press opens it.
+
+<CodeFile name="message.tsx">
 
 ```tsx
 import { Emerse } from "emerse/react";
 
-<Emerse.Root>
-	<Emerse.Trigger>…message…</Emerse.Trigger>
-	<Emerse.Overlay />
-	<Emerse.Menu>
-		<Emerse.Item onSelect={reply}>Reply</Emerse.Item>
-		<Emerse.Item onSelect={copy}>Copy</Emerse.Item>
-	</Emerse.Menu>
-</Emerse.Root>;
+export function Message() {
+	return (
+		<Emerse.Root>
+			<Emerse.Trigger>Are we still on for dinner?</Emerse.Trigger>
+			<Emerse.Overlay />
+			<Emerse.Menu className="menu">
+				<Emerse.Item onSelect={() => console.log("reply")}>Reply</Emerse.Item>
+				<Emerse.Item onSelect={() => console.log("copy")}>Copy</Emerse.Item>
+			</Emerse.Menu>
+		</Emerse.Root>
+	);
+}
 ```
+
+</CodeFile>
+
+## Style it
+
+emerse ships no CSS, so the blur, the shadow and the menu's look are yours. The overlay and the lifted copy are made for you, so style them by their data attributes.
+
+```css
+[data-emerse-overlay] {
+	z-index: 60;
+	background: rgb(0 0 0 / 0.25);
+	backdrop-filter: blur(10px);
+}
+
+[data-emerse-lifted] {
+	z-index: 61;
+	box-shadow: 0 12px 32px rgb(0 0 0 / 0.18);
+}
+
+.menu {
+	z-index: 62;
+	background: white;
+	border-radius: 14px;
+}
+```
+
+The z-indices only matter if the page has z-indexed content of its own. Set all three together, or the overlay covers the rest.
