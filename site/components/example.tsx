@@ -3,8 +3,10 @@ import { join } from "node:path";
 import { highlight } from "@/lib/highlight";
 import { ExampleTabs } from "./example-tabs";
 import { MessageBubbles } from "./examples/message-bubbles";
+import { ScrollOrPress } from "./examples/scroll-or-press";
 
 const DEMOS = {
+	"scroll-or-press": ScrollOrPress,
 	"message-bubbles": MessageBubbles,
 };
 

@@ -1,0 +1,56 @@
+import { Example } from "@/components/example";
+
+export const metadata = { title: "Interaction" };
+
+# Interaction
+
+<Lead>Every way to open the menu, and everything a press might really be.</Lead>
+
+A finger that moves is scrolling. One that stays put opens the menu. Try both below.
+
+<Example name="scroll-or-press" />
+
+## Hold to open
+
+Hold still for 450ms and the item lifts. It works with a finger or the left mouse button. The press is cancelled if you let go early, move more than 8px, or the page scrolls under a resting finger.
+
+A short press is left alone, so the trigger's own `onClick` still fires on a plain click or tap.
+
+## Slide to pick
+
+Keep holding once the menu is up and slide onto an option. The item under your finger gets `data-highlighted`, and letting go picks it. Let go over nothing and the menu stays open.
+
+## Tap through
+
+Let go straight after the menu opens, and it stays up. Tap an item to pick it, or anywhere outside to dismiss.
+
+## Right-click
+
+A right-click or Ctrl+click opens the menu right away, in place of the browser's own. The iOS callout and the Android context menu are kept out of the way too.
+
+## Keyboard
+
+The trigger is focusable. If it isn't already, it gets a `tabindex`.
+
+| Key | Does |
+| --- | --- |
+| `Enter`, `Space` | On the trigger, opens with focus on the first item. On an item, picks it |
+| `ContextMenu`, `Shift+F10` | On the trigger, opens with focus on the first item |
+| `ArrowDown`, `ArrowUp` | Moves between items, and wraps around |
+| `Home`, `End` | Moves to the first or last item |
+| `Escape` | Closes, and returns focus to the trigger |
+
+## Screen readers
+
+Holding still isn't an option with a screen reader, so its activation opens the menu straight away, with focus on the first item. The trigger has `aria-haspopup` and `aria-expanded`, and the menu and its items have `menu` and `menuitem` roles.
+
+## Text selection
+
+With a mouse, dragging across a trigger selects its text as usual, and a press on a selection won't open the menu. On touch, a held finger doesn't start a selection.
+
+## Good to know
+
+- While the menu is up, the page can't scroll and everything else is inert.
+- The click that follows a long press is swallowed, so it can't land on whatever is underneath.
+- Keys pressed inside a link or field in the trigger stay theirs.
+- With reduced motion, the springs are skipped.
