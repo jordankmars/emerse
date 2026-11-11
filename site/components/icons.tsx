@@ -94,3 +94,38 @@ export function ChevronRightIcon(props: SVGProps<SVGSVGElement>) {
 		</svg>
 	);
 }
+
+export function CopyIcon(props: SVGProps<SVGSVGElement>) {
+	return (
+		<svg
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth={2}
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			aria-hidden
+			{...props}
+		>
+			<rect x="9" y="9" width="12" height="12" rx="2" />
+			<path d="M5 15a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2" />
+		</svg>
+	);
+}
+
+export function CheckIcon(props: SVGProps<SVGSVGElement>) {
+	return (
+		<svg
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth={2.5}
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			aria-hidden
+			{...props}
+		>
+			<path d="m5 12 5 5L20 7" />
+		</svg>
+	);
+}

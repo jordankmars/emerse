@@ -1,7 +1,30 @@
 import type { MDXComponents } from "mdx/types";
+import type { ReactElement } from "react";
+import { CodeBlock } from "@/components/code-block";
+import { Install } from "@/components/install";
 import { external } from "@/lib/links";
 
+type Fence = ReactElement<{
+	children: ReactElement<{ className?: string; children: string }>;
+}>;
+
+/** MDX hands over <pre><code class="language-x">source</code></pre>. */
+function fenced(pre: Fence["props"]) {
+	const { className, children } = pre.children.props;
+	return {
+		code: children,
+		lang: className?.replace("language-", "") ?? "text",
+	};
+}
+
+/** A fenced code block with its filename above it. */
+function CodeFile({ name, children }: { name: string; children: Fence }) {
+	return <CodeBlock {...fenced(children.props)} filename={name} />;
+}
+
 const components: MDXComponents = {
+	CodeFile,
+	Install,
 	h1: (props) => (
 		<h1 className="mb-4 text-3xl font-semibold tracking-tight" {...props} />
 	),
@@ -36,12 +59,7 @@ const components: MDXComponents = {
 			{...props}
 		/>
 	),
-	pre: (props) => (
-		<pre
-			className="my-6 overflow-x-auto rounded-xl border border-neutral-200 bg-neutral-50 p-4 font-mono text-[13px] leading-6 [tab-size:2] dark:border-neutral-800 dark:bg-neutral-900 [&_code]:bg-transparent [&_code]:p-0 [&_code]:text-inherit"
-			{...props}
-		/>
-	),
+	pre: (props) => <CodeBlock {...fenced(props as Fence["props"])} />,
 };
 
 export function useMDXComponents(): MDXComponents {
