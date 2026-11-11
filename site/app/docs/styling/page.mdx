@@ -1,0 +1,70 @@
+import { Example } from "@/components/example";
+
+export const metadata = { title: "Styling" };
+
+# Styling
+
+<Lead>The same parts, in any look.</Lead>
+
+emerse ships no CSS. Each part takes your own classes, and the lifted copy brings the trigger's look with it. Here's one menu in five styles.
+
+## Site
+
+The look of this site. The trigger and the menu share one color, so they read as a pair.
+
+<Example name="style-site" />
+
+## Glass
+
+A translucent fill with `backdrop-blur`. It needs something colorful behind it, so the overlay only blurs a little.
+
+<Example name="style-glass" />
+
+## Neobrutalist
+
+Thick borders and a hard offset shadow. A custom `clone` keeps that shadow on the lifted copy.
+
+<Example name="style-brutalist" />
+
+## Terminal
+
+Monospace and sharp corners. A dark overlay with no blur suits it better.
+
+<Example name="style-terminal" />
+
+## Soft
+
+Large radii and a wide, diffuse shadow, over a heavily blurred overlay.
+
+<Example name="style-soft" />
+
+## Style the hooks
+
+The overlay takes classes when you render it. These selectors reach the rest.
+
+| Selector | What it is |
+| --- | --- |
+| `[data-emerse-overlay]` | The overlay, including the one you don't render |
+| `[data-emerse-lifted]` | The lifted copy of the trigger |
+| `[data-highlighted]` | The item under a drag |
+
+Style `[data-highlighted]` along with `:hover`, since a drag doesn't hover.
+
+```tsx
+<Emerse.Item className="hover:bg-neutral-100 data-highlighted:bg-neutral-100" />
+```
+
+## The lifted copy
+
+The copy lands at the end of the page, so CSS scoped to the trigger's parents stops applying. The trigger's computed look is written onto it to make up for that, leaving out layout, motion and `box-shadow`.
+
+Give it a shadow with `[data-emerse-lifted]`. That rule covers every menu on the page, so for one menu's own look, pass `clone` to build the copy yourself.
+
+```tsx
+<Emerse.Trigger clone={(el) => el.cloneNode(true) as HTMLElement} />
+```
+
+## Good to know
+
+- Set the z-indices of the overlay, the lifted copy and the menu together, or the overlay covers the rest.
+- A copy won't carry over a playing video or a canvas. Use `clone` to draw those yourself.

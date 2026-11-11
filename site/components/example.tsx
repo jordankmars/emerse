@@ -4,8 +4,18 @@ import { highlight } from "@/lib/highlight";
 import { ExampleTabs } from "./example-tabs";
 import { MessageBubbles } from "./examples/message-bubbles";
 import { ScrollOrPress } from "./examples/scroll-or-press";
+import { StyleBrutalist } from "./examples/style-brutalist";
+import { StyleGlass } from "./examples/style-glass";
+import { StyleSite } from "./examples/style-site";
+import { StyleSoft } from "./examples/style-soft";
+import { StyleTerminal } from "./examples/style-terminal";
 
 const DEMOS = {
+	"style-soft": StyleSoft,
+	"style-terminal": StyleTerminal,
+	"style-brutalist": StyleBrutalist,
+	"style-glass": StyleGlass,
+	"style-site": StyleSite,
 	"scroll-or-press": ScrollOrPress,
 	"message-bubbles": MessageBubbles,
 };
