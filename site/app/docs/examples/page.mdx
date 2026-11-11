@@ -1,0 +1,33 @@
+import { Example } from "@/components/example";
+
+export const metadata = { title: "Patterns" };
+
+# Patterns
+
+<Lead>Common things to press and hold.</Lead>
+
+Hold any of these, or right-click them with a mouse.
+
+## Message bubbles
+
+A chat, where each side's menu lines up with its own edge. Set `align="end"` on your own messages.
+
+<Example name="message-bubbles" />
+
+## Photo tile
+
+An image in a grid. `Emerse.Trigger` renders a `div`, so it can be any shape, and the lifted copy keeps its background.
+
+<Example name="photo-tile" />
+
+## Row with links
+
+Rows that hold more than a button can. Put `asChild` on an `Emerse.Item` to make it a real link, and set `disabled` on what isn't available.
+
+<Example name="link-rows" />
+
+## Removing an item
+
+Unmounting the Root ends the close animation on the spot. To let it finish, note the pick in `onSelect` and remove the item in `onClosed`.
+
+<Example name="remove-item" />

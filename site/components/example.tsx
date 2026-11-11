@@ -1,0 +1,45 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { highlight } from "@/lib/highlight";
+import { ExampleTabs } from "./example-tabs";
+import { LinkRows } from "./examples/link-rows";
+import { MessageBubbles } from "./examples/message-bubbles";
+import { PhotoTile } from "./examples/photo-tile";
+import { RemoveItem } from "./examples/remove-item";
+import { ScrollOrPress } from "./examples/scroll-or-press";
+import { StyleBrutalist } from "./examples/style-brutalist";
+import { StyleGlass } from "./examples/style-glass";
+import { StyleSite } from "./examples/style-site";
+import { StyleSoft } from "./examples/style-soft";
+import { StyleTerminal } from "./examples/style-terminal";
+
+const DEMOS = {
+	"remove-item": RemoveItem,
+	"link-rows": LinkRows,
+	"photo-tile": PhotoTile,
+	"style-soft": StyleSoft,
+	"style-terminal": StyleTerminal,
+	"style-brutalist": StyleBrutalist,
+	"style-glass": StyleGlass,
+	"style-site": StyleSite,
+	"scroll-or-press": ScrollOrPress,
+	"message-bubbles": MessageBubbles,
+};
+
+/** Runs `components/examples/<name>.tsx` and shows that same file as its code. */
+export async function Example({ name }: { name: keyof typeof DEMOS }) {
+	const source = await readFile(
+		join(process.cwd(), "components/examples", `${name}.tsx`),
+		"utf8",
+	);
+	// Lint notes are for this repo, not for someone copying the example.
+	const code = source
+		.split("\n")
+		.filter((line) => !line.includes("biome-ignore"))
+		.join("\n")
+		.trimEnd();
+	const Demo = DEMOS[name];
+	return (
+		<ExampleTabs view={<Demo />} html={await highlight(code)} code={code} />
+	);
+}

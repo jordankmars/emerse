@@ -20,11 +20,21 @@ body {
 	-moz-osx-font-smoothing: grayscale;
 }
 
-/* emerse renders these itself, so they're styled by their data attributes. */
-[data-emerse-overlay] {
-	@apply z-60 bg-white/45 backdrop-blur-[10px] dark:bg-neutral-950/50;
+/* A native modal dialog doesn't stop the page scrolling behind it. */
+html:has(dialog[open]) {
+	overflow: hidden;
 }
 
-[data-emerse-lifted] {
-	@apply z-61 shadow-[0_12px_32px_rgb(0_0_0/0.18)];
+/*
+ * emerse renders these itself, so they're styled by their data attributes. In a
+ * layer, so a class on Emerse.Overlay or a custom lifted copy can override them.
+ */
+@layer components {
+	[data-emerse-overlay] {
+		@apply z-60 bg-white/45 backdrop-blur-[10px] dark:bg-neutral-950/50;
+	}
+
+	[data-emerse-lifted] {
+		@apply z-61 shadow-[0_12px_32px_rgb(0_0_0/0.18)];
+	}
 }

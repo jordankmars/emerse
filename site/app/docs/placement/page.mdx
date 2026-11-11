@@ -1,0 +1,37 @@
+import { AlignExample } from "@/components/align-example";
+
+export const metadata = { title: "Placement" };
+
+# Placement
+
+<Lead>Where the menu goes, and which edge it lines up with.</Lead>
+
+Pick an `align` below and hold the button.
+
+<AlignExample />
+
+## How it works
+
+`align` sets which edge of the trigger the menu lines up with. With `end`, the two right edges line up and the menu springs out of that corner.
+
+```tsx
+<Emerse.Menu align="end">{/* ... */}</Emerse.Menu>
+```
+
+It's `start` by default. In a right-to-left page, `start` is the right edge.
+
+## Near the viewport edge
+
+The menu goes 10px below the trigger when there's room, and above it when there isn't. Sideways, it moves just far enough to stay 8px from the edge.
+
+It's measured against the part of the page you can see, which leaves out the iOS keyboard, and placed again if the window resizes.
+
+## Container
+
+The menu, overlay and lifted copy go in the body. Pass `container` to put them somewhere else.
+
+```tsx
+<Emerse.Root container={element}>{/* ... */}</Emerse.Root>
+```
+
+They're all `position: fixed`, so don't pass a `container` with a transform.
