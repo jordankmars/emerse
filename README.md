@@ -5,6 +5,10 @@
 
 > Press and hold an item to lift it above a blurred page, with a menu next to it.
 
+<p align="center">
+	<img src=".github/assets/demo.gif" width="380" alt="Holding a chat message lifts it above a blurred page with a menu, and sliding onto Copy picks it" />
+</p>
+
 Keep your finger down and slide onto an option to pick it in one motion, or let
 go and tap through the menu afterward. Right-click and the keyboard open it too.
 
