@@ -3,7 +3,6 @@ import { BookIcon, GitHubIcon } from "@/components/icons";
 import { PeekMenuSample } from "@/components/peek-menu-sample";
 import { AUTHOR_URL, external, GITHUB_URL } from "@/lib/links";
 
-// The same size and shape as eclose's "Use Eclose" button.
 const button =
 	"flex h-10 items-center gap-2 rounded-xl px-4 text-[14px]/[1.5] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-400";
 

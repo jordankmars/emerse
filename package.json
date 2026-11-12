@@ -3,7 +3,13 @@
 	"version": "0.0.0",
 	"description": "Press and hold an item to lift it above a blurred page, with a menu next to it.",
 	"keywords": [
-		"react"
+		"react",
+		"menu",
+		"context-menu",
+		"long-press",
+		"press-and-hold",
+		"touch",
+		"gesture"
 	],
 	"homepage": "https://github.com/jordankmars/emerse#readme",
 	"bugs": {
