@@ -7,7 +7,7 @@ import {
 	useEffect,
 	useRef,
 } from "react";
-import { useEmerse } from "./context";
+import { useRepousse } from "./context";
 import { Slot, useComposedRefs } from "./slot";
 
 export interface ItemProps
@@ -27,7 +27,7 @@ export const Item = forwardRef<HTMLButtonElement, ItemProps>(function Item(
 	{ asChild, onSelect, disabled, ...props },
 	forwarded,
 ) {
-	const { handlers } = useEmerse("Item");
+	const { handlers } = useRepousse("Item");
 	const latest = useRef(onSelect);
 	useEffect(() => {
 		latest.current = onSelect;
@@ -40,7 +40,7 @@ export const Item = forwardRef<HTMLButtonElement, ItemProps>(function Item(
 	);
 	const ref = useComposedRefs<HTMLButtonElement>(register, forwarded);
 	const shared = {
-		"data-emerse-item": "",
+		"data-repousse-item": "",
 		role: "menuitem",
 		tabIndex: -1,
 		...props,

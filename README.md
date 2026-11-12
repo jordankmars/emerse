@@ -1,6 +1,6 @@
-# emerse
+# repousse
 
-[![CI](https://github.com/jordankmars/emerse/actions/workflows/ci.yml/badge.svg)](https://github.com/jordankmars/emerse/actions/workflows/ci.yml)
+[![CI](https://github.com/jordankmars/repousse/actions/workflows/ci.yml/badge.svg)](https://github.com/jordankmars/repousse/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 > Press and hold an item to lift it above a blurred page, with a menu next to it.
@@ -19,7 +19,7 @@ the way, and making sure the menu still works for people who can't hold a press.
 ## Install
 
 ```sh
-npm install emerse
+npm install repousse
 ```
 
 The React adapter needs React 18 or later.
@@ -27,33 +27,33 @@ The React adapter needs React 18 or later.
 ## Usage
 
 ```tsx
-import { Emerse } from "emerse/react";
+import { Repousse } from "repousse/react";
 
-<Emerse.Root>
-	<Emerse.Trigger>…message…</Emerse.Trigger>
-	<Emerse.Overlay className="scrim" />
-	<Emerse.Menu className="menu">
-		<Emerse.Item onSelect={reply}>Reply</Emerse.Item>
-		<Emerse.Item onSelect={copy}>Copy</Emerse.Item>
-	</Emerse.Menu>
-</Emerse.Root>;
+<Repousse.Root>
+	<Repousse.Trigger>…message…</Repousse.Trigger>
+	<Repousse.Overlay className="scrim" />
+	<Repousse.Menu className="menu">
+		<Repousse.Item onSelect={reply}>Reply</Repousse.Item>
+		<Repousse.Item onSelect={copy}>Copy</Repousse.Item>
+	</Repousse.Menu>
+</Repousse.Root>;
 ```
 
-| Part             | Renders           | Props                                                                                                                                                     |
-| ---------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Emerse.Root`    | nothing           | `onOpenChange(open)`, called when the menu starts opening and closing. `onClosed`, called once it has finished closing. `container`, defaults to the body |
-| `Emerse.Trigger` | `div`             | `asChild`, and `clone` to build the lifted copy yourself                                                                                                  |
-| `Emerse.Overlay` | `div`, while open | Optional. Without it, outside taps still dismiss the menu but nothing is painted                                                                          |
-| `Emerse.Menu`    | `div`, while open | `align`, `"start"` or `"end"`                                                                                                                             |
-| `Emerse.Item`    | `button`          | `onSelect`, `disabled`, `asChild`                                                                                                                         |
+| Part               | Renders           | Props                                                                                                                                                     |
+| ------------------ | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Repousse.Root`    | nothing           | `onOpenChange(open)`, called when the menu starts opening and closing. `onClosed`, called once it has finished closing. `container`, defaults to the body |
+| `Repousse.Trigger` | `div`             | `asChild`, and `clone` to build the lifted copy yourself                                                                                                  |
+| `Repousse.Overlay` | `div`, while open | Optional. Without it, outside taps still dismiss the menu but nothing is painted                                                                          |
+| `Repousse.Menu`    | `div`, while open | `align`, `"start"` or `"end"`                                                                                                                             |
+| `Repousse.Item`    | `button`          | `onSelect`, `disabled`, `asChild`                                                                                                                         |
 
 Every part that renders an element also takes that element's usual props and a
 ref. `asChild` puts the behaviour on your own element instead:
 
 ```tsx
-<Emerse.Item asChild onSelect={open}>
+<Repousse.Item asChild onSelect={open}>
 	<a href="/thread">Open thread</a>
-</Emerse.Item>;
+</Repousse.Item>;
 ```
 
 ### Removing an item
@@ -65,41 +65,41 @@ the pick in `onSelect` and remove the item in `onClosed`:
 function Message({ remove }: { remove: () => void }) {
 	const deleting = useRef(false);
 	return (
-		<Emerse.Root onClosed={() => deleting.current && remove()}>
-			<Emerse.Trigger>…message…</Emerse.Trigger>
-			<Emerse.Menu>
-				<Emerse.Item onSelect={() => (deleting.current = true)}>
+		<Repousse.Root onClosed={() => deleting.current && remove()}>
+			<Repousse.Trigger>…message…</Repousse.Trigger>
+			<Repousse.Menu>
+				<Repousse.Item onSelect={() => (deleting.current = true)}>
 					Delete
-				</Emerse.Item>
-			</Emerse.Menu>
-		</Emerse.Root>
+				</Repousse.Item>
+			</Repousse.Menu>
+		</Repousse.Root>
 	);
 }
 ```
 
 ## Styling
 
-emerse ships no styles, so the blur, the shadow and the menu's look are yours.
+repousse ships no styles, so the blur, the shadow and the menu's look are yours.
 These are the hooks:
 
-| Selector                | What it is                                      |
-| ----------------------- | ----------------------------------------------- |
-| `[data-emerse-overlay]` | The overlay, including the one you don't render |
-| `[data-emerse-lifted]`  | The lifted copy of the trigger                  |
-| `[data-highlighted]`    | The item under a drag                           |
+| Selector                  | What it is                                      |
+| ------------------------- | ----------------------------------------------- |
+| `[data-repousse-overlay]` | The overlay, including the one you don't render |
+| `[data-repousse-lifted]`  | The lifted copy of the trigger                  |
+| `[data-highlighted]`      | The item under a drag                           |
 
 A starting point. The z-indices only matter if the page has z-indexed content of
 its own, and all three need setting together, or the overlay covers the rest.
 
 ```css
-[data-emerse-overlay] {
+[data-repousse-overlay] {
 	z-index: 60;
 	background: rgb(0 0 0 / 0.25);
 	-webkit-backdrop-filter: blur(10px);
 	backdrop-filter: blur(10px);
 }
 
-[data-emerse-lifted] {
+[data-repousse-lifted] {
 	z-index: 61;
 	box-shadow: 0 12px 32px rgb(0 0 0 / 0.18);
 }
@@ -118,11 +118,11 @@ its own, and all three need setting together, or the overlay covers the rest.
 
 ## Adapters
 
-| Framework | Import path     | Status      |
-| --------- | --------------- | ----------- |
-| React     | `emerse/react`  | Available   |
-| Vue       | `emerse/vue`    | Coming soon |
-| Svelte    | `emerse/svelte` | Coming soon |
+| Framework | Import path       | Status      |
+| --------- | ----------------- | ----------- |
+| React     | `repousse/react`  | Available   |
+| Vue       | `repousse/vue`    | Coming soon |
+| Svelte    | `repousse/svelte` | Coming soon |
 
 ## Development
 

@@ -1,5 +1,5 @@
 import { forwardRef, type HTMLAttributes, type Ref, useEffect } from "react";
-import { useEmerse } from "./context";
+import { useRepousse } from "./context";
 import { Slot, useComposedRefs } from "./slot";
 
 export interface TriggerProps extends HTMLAttributes<HTMLDivElement> {
@@ -11,7 +11,7 @@ export interface TriggerProps extends HTMLAttributes<HTMLDivElement> {
 
 export const Trigger = forwardRef<HTMLDivElement, TriggerProps>(
 	function Trigger({ asChild, clone, ...props }, forwarded) {
-		const { peek, triggerRef, destroy } = useEmerse("Trigger");
+		const { peek, triggerRef, destroy } = useRepousse("Trigger");
 		const ref = useComposedRefs(triggerRef as Ref<HTMLDivElement>, forwarded);
 
 		useEffect(() => {

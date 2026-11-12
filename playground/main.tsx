@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { configure } from "../src/core";
 import { Motion } from "../src/core/motion";
 import { Press } from "../src/core/press";
-import { Emerse } from "../src/react";
+import { Repousse } from "../src/react";
 
 // Everything the playground does lives in this file on purpose. The menus use
 // the React adapter; the press demo and the motion controls talk to the core.
@@ -56,8 +56,8 @@ h1, h2, p { margin: 0; }
 .chat { width: min(100%, 320px); display: flex; flex-direction: column; gap: 8px; }
 .bubble { max-width: 78%; padding: 8px 13px; border-radius: 18px; background: var(--surface); align-self: flex-start; text-align: left; cursor: default; }
 .bubble.me { align-self: flex-end; background: var(--accent); color: #fff; }
-[data-emerse-overlay] { z-index: 60; background: var(--scrim); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
-[data-emerse-lifted] { z-index: 61; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18); }
+[data-repousse-overlay] { z-index: 60; background: var(--scrim); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+[data-repousse-lifted] { z-index: 61; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18); }
 .corners .bubble { max-width: none; white-space: nowrap; }
 .scroller { height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 12px; background: var(--stage); border-radius: 10px; }
 .corners { position: relative; height: 240px; background: var(--stage); border-radius: 10px; }
@@ -153,10 +153,10 @@ function Bubble({
 	onPick: (label: string) => void;
 }) {
 	return (
-		<Emerse.Root
+		<Repousse.Root
 			onOpenChange={(open) => log(`menu    ${open ? "opening" : "closing"}`)}
 		>
-			<Emerse.Trigger asChild>
+			<Repousse.Trigger asChild>
 				<button
 					type="button"
 					className={me ? "bubble me" : "bubble"}
@@ -164,11 +164,11 @@ function Bubble({
 				>
 					{text}
 				</button>
-			</Emerse.Trigger>
-			<Emerse.Overlay />
-			<Emerse.Menu className="pmenu" align={me ? "end" : "start"}>
+			</Repousse.Trigger>
+			<Repousse.Overlay />
+			<Repousse.Menu className="pmenu" align={me ? "end" : "start"}>
 				{ITEMS.map(([label, hint]) => (
-					<Emerse.Item
+					<Repousse.Item
 						key={label}
 						onSelect={() => {
 							log(`select  ${label}`);
@@ -177,10 +177,10 @@ function Bubble({
 					>
 						{label}
 						<span>{hint}</span>
-					</Emerse.Item>
+					</Repousse.Item>
 				))}
-			</Emerse.Menu>
-		</Emerse.Root>
+			</Repousse.Menu>
+		</Repousse.Root>
 	);
 }
 
@@ -335,7 +335,7 @@ function App() {
 	return (
 		<main className="wrap">
 			<style>{css}</style>
-			<h1>emerse playground</h1>
+			<h1>repousse playground</h1>
 			<Controls />
 			<ChatDemo />
 			<ScrollDemo />

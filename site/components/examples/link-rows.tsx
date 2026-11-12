@@ -1,7 +1,7 @@
 "use client";
 
-import { Emerse } from "emerse/react";
 import Link from "next/link";
+import { Repousse } from "repousse/react";
 
 const pages = [
 	{
@@ -20,28 +20,28 @@ export function LinkRows() {
 	return (
 		<div className="grid w-full max-w-sm divide-y divide-neutral-200 dark:divide-neutral-800">
 			{pages.map((page) => (
-				<Emerse.Root key={page.href}>
-					<Emerse.Trigger className="cursor-default bg-white px-2 py-3 dark:bg-neutral-950">
+				<Repousse.Root key={page.href}>
+					<Repousse.Trigger className="cursor-default bg-white px-2 py-3 dark:bg-neutral-950">
 						<b className="block text-sm font-medium">{page.title}</b>
 						<span className="text-xs text-neutral-500 dark:text-neutral-400">
 							{page.text}
 						</span>
-					</Emerse.Trigger>
-					<Emerse.Overlay className="z-60 bg-white/45 backdrop-blur-[10px] dark:bg-neutral-950/50" />
-					<Emerse.Menu className="z-62 grid w-48 rounded-[14px] bg-white p-[5px] text-sm shadow-[0_12px_40px_rgb(0_0_0/0.2)] ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-800">
-						<Emerse.Item asChild className={item}>
+					</Repousse.Trigger>
+					<Repousse.Overlay className="z-60 bg-white/45 backdrop-blur-[10px] dark:bg-neutral-950/50" />
+					<Repousse.Menu className="z-62 grid w-48 rounded-[14px] bg-white p-[5px] text-sm shadow-[0_12px_40px_rgb(0_0_0/0.2)] ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-800">
+						<Repousse.Item asChild className={item}>
 							<Link href={page.href}>Open</Link>
-						</Emerse.Item>
-						<Emerse.Item asChild className={item}>
+						</Repousse.Item>
+						<Repousse.Item asChild className={item}>
 							<a href={page.href} target="_blank" rel="noopener noreferrer">
 								Open in new tab
 							</a>
-						</Emerse.Item>
-						<Emerse.Item disabled className={item}>
+						</Repousse.Item>
+						<Repousse.Item disabled className={item}>
 							Rename
-						</Emerse.Item>
-					</Emerse.Menu>
-				</Emerse.Root>
+						</Repousse.Item>
+					</Repousse.Menu>
+				</Repousse.Root>
 			))}
 		</div>
 	);

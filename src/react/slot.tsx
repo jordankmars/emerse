@@ -71,7 +71,7 @@ function merge(slot: AnyProps, child: AnyProps): AnyProps {
 export const Slot = forwardRef<HTMLElement, HTMLAttributes<HTMLElement>>(
 	function Slot({ children, ...props }, forwarded) {
 		if (!isValidElement(children)) {
-			throw new Error("emerse: asChild needs a single element as its child.");
+			throw new Error("repousse: asChild needs a single element as its child.");
 		}
 		const ref = useComposedRefs(
 			forwarded,

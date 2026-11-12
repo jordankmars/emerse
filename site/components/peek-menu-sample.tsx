@@ -1,12 +1,12 @@
 "use client";
 
-import { Emerse } from "emerse/react";
 import { useState } from "react";
+import { Repousse } from "repousse/react";
 
 // A port of the playground's "Peek menu" (playground/main.tsx), with the same
 // sizes, items and messages, in the site's neutral palette. Messages from "me"
 // use the same ink as the primary button. The overlay and the lifted copy are
-// styled in globals.css, since emerse renders them itself.
+// styled in globals.css, since repousse renders them itself.
 const ITEMS = [
 	["Reply", "↩"],
 	["Copy", "⌘C"],
@@ -36,22 +36,22 @@ function Bubble({
 	onPick: (label: string) => void;
 }) {
 	return (
-		<Emerse.Root>
-			<Emerse.Trigger asChild>
+		<Repousse.Root>
+			<Repousse.Trigger asChild>
 				<button
 					type="button"
 					className={`${me ? `${ink} self-end` : "self-start bg-white dark:bg-neutral-800"} ${focus} max-w-[78%] cursor-default rounded-[18px] px-[13px] py-2 text-left`}
 				>
 					{text}
 				</button>
-			</Emerse.Trigger>
-			<Emerse.Overlay />
-			<Emerse.Menu
+			</Repousse.Trigger>
+			<Repousse.Overlay />
+			<Repousse.Menu
 				align={me ? "end" : "start"}
 				className="z-62 grid w-[210px] rounded-[14px] bg-white p-[5px] text-[14px]/[1.5] text-neutral-900 shadow-[0_12px_40px_rgb(0_0_0/0.2)] ring-1 ring-neutral-200 dark:bg-neutral-900 dark:text-neutral-100 dark:ring-neutral-800"
 			>
 				{ITEMS.map(([label, hint]) => (
-					<Emerse.Item
+					<Repousse.Item
 						key={label}
 						onSelect={() => onPick(label)}
 						className={`${focus} flex cursor-default items-center justify-between rounded-[9px] px-3 py-[9px] text-left hover:bg-neutral-100 data-highlighted:bg-neutral-100 dark:hover:bg-neutral-800 dark:data-highlighted:bg-neutral-800`}
@@ -60,10 +60,10 @@ function Bubble({
 						<span className="font-mono text-[11px] text-neutral-500 dark:text-neutral-400">
 							{hint}
 						</span>
-					</Emerse.Item>
+					</Repousse.Item>
 				))}
-			</Emerse.Menu>
-		</Emerse.Root>
+			</Repousse.Menu>
+		</Repousse.Root>
 	);
 }
 

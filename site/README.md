@@ -1,6 +1,6 @@
-# emerse site
+# repousse site
 
-The docs site for emerse: Next.js, statically exported, hosted on Cloudflare.
+The docs site for repousse: Next.js, statically exported, hosted on Cloudflare.
 
 ```sh
 pnpm site:dev    # from the repo root, builds the library first

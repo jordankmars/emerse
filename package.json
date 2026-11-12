@@ -1,5 +1,5 @@
 {
-	"name": "emerse",
+	"name": "repousse",
 	"version": "1.0.0",
 	"description": "Press and hold an item to lift it above a blurred page, with a menu next to it.",
 	"keywords": [
@@ -11,13 +11,13 @@
 		"touch",
 		"gesture"
 	],
-	"homepage": "https://github.com/jordankmars/emerse#readme",
+	"homepage": "https://github.com/jordankmars/repousse#readme",
 	"bugs": {
-		"url": "https://github.com/jordankmars/emerse/issues"
+		"url": "https://github.com/jordankmars/repousse/issues"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/jordankmars/emerse.git"
+		"url": "git+https://github.com/jordankmars/repousse.git"
 	},
 	"author": "Jordan Mars",
 	"license": "MIT",
