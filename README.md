@@ -133,7 +133,12 @@ differently on real devices, so it's worth opening it on a phone.
 
 ## Contributing
 
-Contributions are welcome. Please open an issue to discuss changes before submitting a pull request.
+Bug reports and pull requests are welcome. For anything bigger than a fix, open
+an issue first so we can agree on the approach.
+
+Before sending a pull request, run `pnpm lint`, `pnpm typecheck` and `pnpm test`.
+If the change touches pressing, dragging or scrolling, try it on a real phone
+too, through `pnpm playground --host`.
 
 ## License
 
