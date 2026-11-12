@@ -1,5 +1,8 @@
 # emerse
 
+[![CI](https://github.com/jordankmars/emerse/actions/workflows/ci.yml/badge.svg)](https://github.com/jordankmars/emerse/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+
 > Press and hold an item to lift it above a blurred page, with a menu next to it.
 
 Keep your finger down and slide onto an option to pick it in one motion, or let
