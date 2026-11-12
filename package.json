@@ -11,13 +11,13 @@
 		"touch",
 		"gesture"
 	],
-	"homepage": "https://github.com/jordankmars/emerse#readme",
+	"homepage": "https://github.com/jordankmars/repousse#readme",
 	"bugs": {
-		"url": "https://github.com/jordankmars/emerse/issues"
+		"url": "https://github.com/jordankmars/repousse/issues"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/jordankmars/emerse.git"
+		"url": "git+https://github.com/jordankmars/repousse.git"
 	},
 	"author": "Jordan Mars",
 	"license": "MIT",
