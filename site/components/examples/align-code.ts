@@ -4,17 +4,17 @@ export const ALIGNS: Align[] = ["start", "end"];
 
 export const alignCode = (
 	align: Align,
-) => `import { Emerse } from "emerse/react";
+) => `import { Repousse } from "repousse/react";
 
 export function Example() {
 	return (
-		<Emerse.Root>
-			<Emerse.Trigger>Hold me</Emerse.Trigger>
-			<Emerse.Overlay />
-			<Emerse.Menu align="${align}">
-				<Emerse.Item>Reply</Emerse.Item>
-				<Emerse.Item>Copy</Emerse.Item>
-			</Emerse.Menu>
-		</Emerse.Root>
+		<Repousse.Root>
+			<Repousse.Trigger>Hold me</Repousse.Trigger>
+			<Repousse.Overlay />
+			<Repousse.Menu align="${align}">
+				<Repousse.Item>Reply</Repousse.Item>
+				<Repousse.Item>Copy</Repousse.Item>
+			</Repousse.Menu>
+		</Repousse.Root>
 	);
 }`;

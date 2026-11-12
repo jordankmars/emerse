@@ -37,7 +37,7 @@ export interface PeekOptions {
 	onPhase?: (phase: Phase) => void;
 }
 
-const ITEM = '[data-emerse-item]:not([disabled],[aria-disabled="true"])';
+const ITEM = '[data-repousse-item]:not([disabled],[aria-disabled="true"])';
 
 const SQUEEZE = { duration: 0.45, bounce: 0, rest: 0.001 };
 const LIFT = { duration: 0.45, bounce: 0.35, rest: 0.001 };
@@ -208,7 +208,7 @@ export class Peek {
 			this.el.setAttribute("aria-expanded", "true");
 		}
 		stage.menu.setAttribute("role", "menu");
-		for (const item of stage.menu.querySelectorAll("[data-emerse-item]")) {
+		for (const item of stage.menu.querySelectorAll("[data-repousse-item]")) {
 			item.setAttribute("role", "menuitem");
 			item.setAttribute("tabindex", "-1");
 		}
@@ -231,7 +231,7 @@ export class Peek {
 
 		const given = this.options.overlay?.() ?? null;
 		const overlay = given ?? document.createElement("div");
-		overlay.dataset.emerseOverlay = "";
+		overlay.dataset.repousseOverlay = "";
 		Object.assign(overlay.style, {
 			position: "fixed",
 			inset: "0",
@@ -243,7 +243,7 @@ export class Peek {
 		menu.addEventListener("contextmenu", blockContextMenu);
 
 		const clone = (this.options.clone ?? cloneTrigger)(trigger);
-		clone.dataset.emerseLifted = "";
+		clone.dataset.repousseLifted = "";
 		clone.setAttribute("aria-hidden", "true");
 		clone.inert = true;
 		Object.assign(clone.style, {

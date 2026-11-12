@@ -6,7 +6,7 @@ export const metadata = { title: "Styling" };
 
 <Lead>The same parts, in any look.</Lead>
 
-emerse ships no CSS. Each part takes your own classes, and the lifted copy brings the trigger's look with it. Here's one menu in five styles.
+repousse ships no CSS. Each part takes your own classes, and the lifted copy brings the trigger's look with it. Here's one menu in five styles.
 
 ## Site
 
@@ -44,24 +44,24 @@ The overlay takes classes when you render it. These selectors reach the rest.
 
 | Selector | What it is |
 | --- | --- |
-| `[data-emerse-overlay]` | The overlay, including the one you don't render |
-| `[data-emerse-lifted]` | The lifted copy of the trigger |
+| `[data-repousse-overlay]` | The overlay, including the one you don't render |
+| `[data-repousse-lifted]` | The lifted copy of the trigger |
 | `[data-highlighted]` | The item under a drag |
 
 Style `[data-highlighted]` along with `:hover`, since a drag doesn't hover.
 
 ```tsx
-<Emerse.Item className="hover:bg-neutral-100 data-highlighted:bg-neutral-100" />
+<Repousse.Item className="hover:bg-neutral-100 data-highlighted:bg-neutral-100" />
 ```
 
 ## The lifted copy
 
 The copy lands at the end of the page, so CSS scoped to the trigger's parents stops applying. The trigger's computed look is written onto it to make up for that, leaving out layout, motion and `box-shadow`.
 
-Give it a shadow with `[data-emerse-lifted]`. That rule covers every menu on the page, so for one menu's own look, pass `clone` to build the copy yourself.
+Give it a shadow with `[data-repousse-lifted]`. That rule covers every menu on the page, so for one menu's own look, pass `clone` to build the copy yourself.
 
 ```tsx
-<Emerse.Trigger clone={(el) => el.cloneNode(true) as HTMLElement} />
+<Repousse.Trigger clone={(el) => el.cloneNode(true) as HTMLElement} />
 ```
 
 ## Good to know

@@ -2,22 +2,22 @@ export const metadata = { title: "API" };
 
 # API
 
-<Lead>The parts of emerse and the props they take.</Lead>
+<Lead>The parts of repousse and the props they take.</Lead>
 
 ## Anatomy
 
-Import `Emerse` and put the parts together.
+Import `Repousse` and put the parts together.
 
 ```tsx
-import { Emerse } from "emerse/react";
+import { Repousse } from "repousse/react";
 
-<Emerse.Root>
-	<Emerse.Trigger />
-	<Emerse.Overlay />
-	<Emerse.Menu>
-		<Emerse.Item />
-	</Emerse.Menu>
-</Emerse.Root>;
+<Repousse.Root>
+	<Repousse.Trigger />
+	<Repousse.Overlay />
+	<Repousse.Menu>
+		<Repousse.Item />
+	</Repousse.Menu>
+</Repousse.Root>;
 ```
 
 Every part that renders an element takes that element's usual props and a ref.
@@ -74,17 +74,17 @@ An option in the menu. Renders a `button`, and takes button props.
 `onSelect` runs however the item is picked, by drag, tap or keyboard. With `asChild`, a link still navigates.
 
 ```tsx
-<Emerse.Item asChild>
+<Repousse.Item asChild>
 	<a href="/thread">Open thread</a>
-</Emerse.Item>
+</Repousse.Item>
 ```
 
 ## Data attributes
 
 | Selector | What it is |
 | --- | --- |
-| `[data-emerse-overlay]` | The overlay, including the one you don't render |
-| `[data-emerse-lifted]` | The lifted copy of the trigger |
+| `[data-repousse-overlay]` | The overlay, including the one you don't render |
+| `[data-repousse-lifted]` | The lifted copy of the trigger |
 | `[data-highlighted]` | The item under a drag |
 
 ## Good to know

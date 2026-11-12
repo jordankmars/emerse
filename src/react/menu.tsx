@@ -1,7 +1,7 @@
 import { forwardRef, type HTMLAttributes, type Ref, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { contain } from "./contain";
-import { useEmerse } from "./context";
+import { useRepousse } from "./context";
 import { useComposedRefs } from "./slot";
 
 export interface MenuProps extends HTMLAttributes<HTMLDivElement> {
@@ -13,7 +13,7 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
 	{ align, ...props },
 	forwarded,
 ) {
-	const { peek, open, menuRef, container } = useEmerse("Menu");
+	const { peek, open, menuRef, container } = useRepousse("Menu");
 	const ref = useComposedRefs(menuRef as Ref<HTMLDivElement>, forwarded);
 
 	useEffect(() => {

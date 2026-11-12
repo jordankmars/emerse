@@ -1,4 +1,4 @@
-// Stays a server module, so Emerse.Root can be read in a server component. The
+// Stays a server module, so Repousse.Root can be read in a server component. The
 // build puts "use client" on each file this re-exports from.
 
 export { Item, type ItemProps } from "./item";

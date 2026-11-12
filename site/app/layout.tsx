@@ -15,7 +15,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-	title: { default: "Emerse", template: "%s · Emerse" },
+	title: { default: "Repousse", template: "%s · Repousse" },
 	description: "A menu that lifts what you press above the page.",
 };
 

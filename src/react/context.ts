@@ -13,14 +13,15 @@ export interface Bridge {
 	destroy: () => void;
 }
 
-export interface EmerseContextValue extends Bridge {
+export interface RepousseContextValue extends Bridge {
 	open: boolean;
 }
 
-export const EmerseContext = createContext<EmerseContextValue | null>(null);
+export const RepousseContext = createContext<RepousseContextValue | null>(null);
 
-export function useEmerse(part: string): EmerseContextValue {
-	const value = useContext(EmerseContext);
-	if (!value) throw new Error(`emerse: ${part} must be inside Emerse.Root.`);
+export function useRepousse(part: string): RepousseContextValue {
+	const value = useContext(RepousseContext);
+	if (!value)
+		throw new Error(`repousse: ${part} must be inside Repousse.Root.`);
 	return value;
 }

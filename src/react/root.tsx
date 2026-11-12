@@ -8,7 +8,7 @@ import {
 } from "react";
 import { flushSync } from "react-dom";
 import { Peek } from "../core";
-import { type Bridge, EmerseContext } from "./context";
+import { type Bridge, RepousseContext } from "./context";
 
 export interface RootProps {
 	/** Told when the menu starts opening and when it starts closing. */
@@ -87,6 +87,8 @@ export function Root({
 	const [bridge] = useState(() => createBridge(setOpen, latest));
 	const value = useMemo(() => ({ ...bridge, open }), [bridge, open]);
 	return (
-		<EmerseContext.Provider value={value}>{children}</EmerseContext.Provider>
+		<RepousseContext.Provider value={value}>
+			{children}
+		</RepousseContext.Provider>
 	);
 }

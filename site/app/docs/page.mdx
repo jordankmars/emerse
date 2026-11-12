@@ -16,25 +16,25 @@ Install the package from your command line.
 
 <Install />
 
-## Create an Emerse
+## Create an Repousse
 
 Compose the parts. The menu stays out of the page until a press opens it.
 
 <CodeFile name="message.tsx">
 
 ```tsx
-import { Emerse } from "emerse/react";
+import { Repousse } from "repousse/react";
 
 export function Message() {
 	return (
-		<Emerse.Root>
-			<Emerse.Trigger>Are we still on for dinner?</Emerse.Trigger>
-			<Emerse.Overlay />
-			<Emerse.Menu className="menu">
-				<Emerse.Item onSelect={() => console.log("reply")}>Reply</Emerse.Item>
-				<Emerse.Item onSelect={() => console.log("copy")}>Copy</Emerse.Item>
-			</Emerse.Menu>
-		</Emerse.Root>
+		<Repousse.Root>
+			<Repousse.Trigger>Are we still on for dinner?</Repousse.Trigger>
+			<Repousse.Overlay />
+			<Repousse.Menu className="menu">
+				<Repousse.Item onSelect={() => console.log("reply")}>Reply</Repousse.Item>
+				<Repousse.Item onSelect={() => console.log("copy")}>Copy</Repousse.Item>
+			</Repousse.Menu>
+		</Repousse.Root>
 	);
 }
 ```
@@ -43,16 +43,16 @@ export function Message() {
 
 ## Style it
 
-emerse ships no CSS, so the blur, the shadow and the menu's look are yours. The overlay and the lifted copy are made for you, so style them by their data attributes.
+repousse ships no CSS, so the blur, the shadow and the menu's look are yours. The overlay and the lifted copy are made for you, so style them by their data attributes.
 
 ```css
-[data-emerse-overlay] {
+[data-repousse-overlay] {
 	z-index: 60;
 	background: rgb(0 0 0 / 0.25);
 	backdrop-filter: blur(10px);
 }
 
-[data-emerse-lifted] {
+[data-repousse-lifted] {
 	z-index: 61;
 	box-shadow: 0 12px 32px rgb(0 0 0 / 0.18);
 }

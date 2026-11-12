@@ -49,7 +49,7 @@ const triggers = () => [
 ];
 const menu = () => document.querySelector<HTMLElement>('[role="menu"]');
 const items = () => [
-	...document.querySelectorAll<HTMLElement>("[data-emerse-item]"),
+	...document.querySelectorAll<HTMLElement>("[data-repousse-item]"),
 ];
 
 function hold(el = triggers()[0]) {
@@ -191,7 +191,7 @@ describe("Trigger", () => {
 
 	it("needs a Root", () => {
 		consoleError.mockImplementation(() => {});
-		expect(() => render(<Trigger>Message</Trigger>)).toThrow(/Emerse.Root/);
+		expect(() => render(<Trigger>Message</Trigger>)).toThrow(/Repousse.Root/);
 		consoleError.mockClear();
 	});
 });
@@ -205,7 +205,7 @@ describe("Menu", () => {
 		act(() => {
 			pointer(
 				"pointerdown",
-				document.querySelector("[data-emerse-overlay]") as Element,
+				document.querySelector("[data-repousse-overlay]") as Element,
 			);
 		});
 		settle();
@@ -248,8 +248,8 @@ describe("Menu", () => {
 		roots = [];
 		expect(other.hasAttribute("inert")).toBe(false);
 		expect(document.documentElement.style.overflow).toBe("");
-		expect(document.querySelector("[data-emerse-overlay]")).toBeNull();
-		expect(document.querySelector("[data-emerse-lifted]")).toBeNull();
+		expect(document.querySelector("[data-repousse-overlay]")).toBeNull();
+		expect(document.querySelector("[data-repousse-lifted]")).toBeNull();
 	});
 
 	it("doesn't send a pick to the React parent", () => {
@@ -408,8 +408,8 @@ describe("Item", () => {
 		act(() => items()[0].click());
 		settle();
 		expect(menu()).toBeNull();
-		expect(document.querySelector("[data-emerse-overlay]")).toBeNull();
-		expect(document.querySelector("[data-emerse-lifted]")).toBeNull();
+		expect(document.querySelector("[data-repousse-overlay]")).toBeNull();
+		expect(document.querySelector("[data-repousse-lifted]")).toBeNull();
 		expect(document.documentElement.style.overflow).toBe("");
 	});
 });
@@ -446,19 +446,19 @@ describe("onClosed", () => {
 		const el = menu();
 		act(() => items()[0].click());
 		expect(menu()).toBe(el);
-		expect(document.querySelector("[data-emerse-lifted]")).not.toBeNull();
+		expect(document.querySelector("[data-repousse-lifted]")).not.toBeNull();
 		settle();
 		expect(document.body.textContent).not.toContain("Message");
 		expect(menu()).toBeNull();
-		expect(document.querySelector("[data-emerse-overlay]")).toBeNull();
-		expect(document.querySelector("[data-emerse-lifted]")).toBeNull();
+		expect(document.querySelector("[data-repousse-overlay]")).toBeNull();
+		expect(document.querySelector("[data-repousse-lifted]")).toBeNull();
 		expect(document.documentElement.style.overflow).toBe("");
 	});
 });
 
 describe("Overlay", () => {
 	const overlays = () => [
-		...document.querySelectorAll<HTMLElement>("[data-emerse-overlay]"),
+		...document.querySelectorAll<HTMLElement>("[data-repousse-overlay]"),
 	];
 
 	function withOverlay() {
@@ -485,9 +485,9 @@ describe("Overlay", () => {
 		expect(overlays()).toHaveLength(1);
 		expect(overlay.id).toBe("mine");
 		expect(overlay.className).toBe("scrim");
-		expect(overlay.nextElementSibling?.hasAttribute("data-emerse-lifted")).toBe(
-			true,
-		);
+		expect(
+			overlay.nextElementSibling?.hasAttribute("data-repousse-lifted"),
+		).toBe(true);
 		expect(overlay.nextElementSibling?.nextElementSibling).toBe(menu());
 	});
 

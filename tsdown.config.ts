@@ -4,7 +4,7 @@ export default defineConfig({
 	entry: "src/react/index.ts",
 	root: "src",
 	format: "esm",
-	// A server component can't dot into a client module, so the Emerse namespace
+	// A server component can't dot into a client module, so the Repousse namespace
 	// has to live outside the boundary. The directive goes on each component and
 	// nothing is bundled, or the namespace would end up inside a client file.
 	unbundle: true,

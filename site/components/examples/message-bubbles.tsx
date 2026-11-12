@@ -1,7 +1,7 @@
 "use client";
 
-import { Emerse } from "emerse/react";
 import { useState } from "react";
+import { Repousse } from "repousse/react";
 
 const items = ["Reply", "Copy", "Pin", "Forward"];
 
@@ -19,31 +19,31 @@ function Bubble({
 	onPick: (item: string) => void;
 }) {
 	return (
-		<Emerse.Root>
-			<Emerse.Trigger asChild>
+		<Repousse.Root>
+			<Repousse.Trigger asChild>
 				<button
 					type="button"
 					className={`${me ? `${ink} self-end` : `${other} self-start`} max-w-[78%] cursor-default rounded-[18px] px-[13px] py-2 text-left text-sm`}
 				>
 					{text}
 				</button>
-			</Emerse.Trigger>
-			<Emerse.Overlay className="z-60 bg-white/45 backdrop-blur-[10px] dark:bg-neutral-950/50" />
-			<Emerse.Menu
+			</Repousse.Trigger>
+			<Repousse.Overlay className="z-60 bg-white/45 backdrop-blur-[10px] dark:bg-neutral-950/50" />
+			<Repousse.Menu
 				align={me ? "end" : "start"}
 				className="z-62 grid w-[210px] rounded-[14px] bg-white p-[5px] text-sm shadow-[0_12px_40px_rgb(0_0_0/0.2)] ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-800"
 			>
 				{items.map((item) => (
-					<Emerse.Item
+					<Repousse.Item
 						key={item}
 						onSelect={() => onPick(item)}
 						className="cursor-default rounded-[9px] px-3 py-[9px] text-left hover:bg-neutral-100 data-highlighted:bg-neutral-100 dark:hover:bg-neutral-800 dark:data-highlighted:bg-neutral-800"
 					>
 						{item}
-					</Emerse.Item>
+					</Repousse.Item>
 				))}
-			</Emerse.Menu>
-		</Emerse.Root>
+			</Repousse.Menu>
+		</Repousse.Root>
 	);
 }
 

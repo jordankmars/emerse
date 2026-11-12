@@ -1,3 +1,3 @@
-// React adapter. Published as emerse/react.
+// React adapter. Published as repousse/react.
 
-export * as Emerse from "./parts";
+export * as Repousse from "./parts";

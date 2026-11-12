@@ -11,7 +11,7 @@ function setup(options: Partial<PeekOptions> = {}) {
 	const menu = document.createElement("div");
 	menu.hidden = true;
 	menu.innerHTML =
-		'<button data-emerse-item="a">A</button><button data-emerse-item="b">B</button><button data-emerse-item="c">C</button>';
+		'<button data-repousse-item="a">A</button><button data-repousse-item="b">B</button><button data-repousse-item="c">C</button>';
 	document.body.append(trigger, menu);
 	const items = [...menu.querySelectorAll("button")];
 	peek = new Peek({
@@ -48,9 +48,9 @@ function hold(trigger: Element) {
 }
 
 const overlay = () =>
-	document.querySelector<HTMLElement>("[data-emerse-overlay]");
+	document.querySelector<HTMLElement>("[data-repousse-overlay]");
 const lifted = () =>
-	document.querySelector<HTMLElement>("[data-emerse-lifted]");
+	document.querySelector<HTMLElement>("[data-repousse-lifted]");
 
 beforeEach(() => {
 	vi.useFakeTimers();
@@ -174,7 +174,9 @@ describe("closing", () => {
 		vi.advanceTimersByTime(1);
 		hold(trigger);
 		expect(peek.phase).toBe("open");
-		expect(document.querySelectorAll("[data-emerse-overlay]")).toHaveLength(1);
+		expect(document.querySelectorAll("[data-repousse-overlay]")).toHaveLength(
+			1,
+		);
 	});
 
 	it("restores everything when destroyed while open", () => {
@@ -776,7 +778,9 @@ describe("one at a time", () => {
 		second.dispatchEvent(new MouseEvent("contextmenu", { cancelable: true }));
 		expect(first.phase).toBe("closed");
 		expect(peek.phase).toBe("open");
-		expect(document.querySelectorAll("[data-emerse-overlay]")).toHaveLength(1);
+		expect(document.querySelectorAll("[data-repousse-overlay]")).toHaveLength(
+			1,
+		);
 		first.destroy();
 	});
 });
@@ -863,7 +867,7 @@ describe("for adapters", () => {
 			const parts = setup(options);
 			const link = document.createElement("a");
 			link.href = "#thread";
-			link.dataset.emerseItem = "link";
+			link.dataset.repousseItem = "link";
 			parts.menu.append(link);
 			const clicks: boolean[] = [];
 			link.addEventListener("click", (e) => {
@@ -943,7 +947,7 @@ describe("for adapters", () => {
 			setup({ overlay: () => el });
 			peek.open();
 			expect(overlay()).toBe(el);
-			expect(document.querySelectorAll("[data-emerse-overlay]")).toHaveLength(
+			expect(document.querySelectorAll("[data-repousse-overlay]")).toHaveLength(
 				1,
 			);
 			expect(el.style.position).toBe("fixed");

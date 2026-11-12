@@ -15,7 +15,7 @@ Pick an `align` below and hold the button.
 `align` sets which edge of the trigger the menu lines up with. With `end`, the two right edges line up and the menu springs out of that corner.
 
 ```tsx
-<Emerse.Menu align="end">{/* ... */}</Emerse.Menu>
+<Repousse.Menu align="end">{/* ... */}</Repousse.Menu>
 ```
 
 It's `start` by default. In a right-to-left page, `start` is the right edge.
@@ -31,7 +31,7 @@ It's measured against the part of the page you can see, which leaves out the iOS
 The menu, overlay and lifted copy go in the body. Pass `container` to put them somewhere else.
 
 ```tsx
-<Emerse.Root container={element}>{/* ... */}</Emerse.Root>
+<Repousse.Root container={element}>{/* ... */}</Repousse.Root>
 ```
 
 They're all `position: fixed`, so don't pass a `container` with a transform.
