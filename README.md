@@ -16,10 +16,13 @@ The hard part isn't the animation. It's telling a long press apart from a scroll
 a tap or text selection, keeping the iOS callout and Android context menu out of
 the way, and making sure the menu still works for people who can't hold a press.
 
-## Status
+## Install
 
-Early days. The framework-agnostic core and the React adapter are in place and
-can be tried in the playground. Nothing is published yet.
+```sh
+npm install emerse
+```
+
+The React adapter needs React 18 or later.
 
 ## Usage
 
@@ -115,11 +118,11 @@ its own, and all three need setting together, or the overlay covers the rest.
 
 ## Adapters
 
-| Framework | Import path     | Status        |
-| --------- | --------------- | ------------- |
-| React     | `emerse/react`  | Not published |
-| Vue       | `emerse/vue`    | Coming soon   |
-| Svelte    | `emerse/svelte` | Coming soon   |
+| Framework | Import path     | Status      |
+| --------- | --------------- | ----------- |
+| React     | `emerse/react`  | Available   |
+| Vue       | `emerse/vue`    | Coming soon |
+| Svelte    | `emerse/svelte` | Coming soon |
 
 ## Development
 
