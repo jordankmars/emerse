@@ -1,6 +1,6 @@
 {
 	"name": "repousse",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Press and hold an item to lift it above a blurred page, with a menu next to it.",
 	"keywords": [
 		"react",
